@@ -261,10 +261,10 @@ const COL={
 const GAL={plants:[
 {key:'seed',name:'SEED',sym:SYM.seed,col:COL.seedGold,prog:null},
 {key:'bushSprout',name:'SPROUT',sym:SYM.bushSprout,col:COL.bushDim,prog:null},
-{key:'bush',name:'BUSH',sym:SYM.bush,col:COL.bushBright,prog:{current:()=>cntB(),max:10}},
+{key:'bush',name:'BUSH',sym:SYM.bush,col:COL.bushBright,prog:{current:()=>cntB(),max:3}},
 {key:'treeSeed',name:'TREE SEED',sym:SYM.treeSeed,col:COL.tSeedCyan,prog:null},
 {key:'treeSprout',name:'SAPLING',sym:SYM.treeSprout,col:COL.treeDim,prog:null},
-{key:'tree',name:'TREE',sym:SYM.tree,col:COL.treeBright,prog:{current:()=>cntT(),max:20}},
+{key:'tree',name:'TREE',sym:SYM.tree,col:COL.treeBright,prog:{current:()=>cntT(),max:6}},
 {key:'river',name:'RIVER',sym:'≈',col:COL.riverCyan,prog:null},
 {key:'reed',name:'REED',sym:SYM.reed,col:COL.reedBright,prog:null},
 {key:'flower',name:'FLOWER',sym:SYM.flower,col:COL.flowerPink,prog:{current:()=>flowers.length,max:MAX_FLOWERS}},
@@ -278,9 +278,9 @@ const GAL={plants:[
 ]};
 const TASKS=[
 {id:'plant3',text:'Plant 3 seeds in the ground',check:()=>totalSP>=3},
-{id:'bush10',text:'Grow 10 bushes',check:()=>cntB()>=10},
+{id:'bush10',text:'Grow 3 bushes',check:()=>cntB()>=3},
 {id:'tree1',text:'Grow your first tree',check:()=>cntT()>=1},
-{id:'tree20',text:'Fill the forest with 20 trees',check:()=>cntT()>=20},
+{id:'tree20',text:'Fill the forest with 6 trees',check:()=>cntT()>=6},
 {id:'chop1',text:'Transform the landscape',check:()=>disc['river']===true},
 {id:'reed1',text:'Clear the aquatic vegetation',check:()=>disc['reedCleared']===true},
 {id:'frog1',text:'Find a hidden creature',check:()=>disc['frog']===true},
@@ -350,7 +350,7 @@ function spawnReedB(){if(reeds.filter(r=>r.st==='adult').length>=MAX_REEDS)retur
 function removeReed(gx,gy){const i=reeds.findIndex(r=>r.gx===gx&&r.gy===gy&&r.st==='adult');if(i===-1)return false;reeds.splice(i,1);spawnP(gx*T+T/2,gy*T+T/2,'#40a040','#60e060');disc['reedCleared']=true;if(Math.random()<0.10&&frogs.length<MAX_FROGS){frogs.push(mkA('frog',gx,gy));disc_('frog','Amphibian life form detected');}return true;}
 function updFlowers(dt){if(frogs.length<3)return;flowerST-=dt;if(flowerST<=0){flowerST=3+Math.random()*7;if(flowers.length<MAX_FLOWERS){for(let a=0;a<50;a++){const gx=Math.floor(Math.random()*GW),gy=Math.floor(Math.random()*GH);if(grid[gy][gx]==='empty'&&!nearA(gx,gy,AR-1)){grid[gy][gx]='flower';flowers.push({gx,gy,col:FC[Math.floor(Math.random()*FC.length)]});disc_('flower','Floral organisms detected');break;}}}}}
 function chk2x2(gx,gy){const offsets=[[-1,-1],[0,-1],[-1,0],[0,0]];for(const[ox,oy]of offsets){const x0=gx+ox,y0=gy+oy;const pts=[[x0,y0],[x0+1,y0],[x0,y0+1],[x0+1,y0+1]];const fls=[];let ok=true;for(const[px2,py2]of pts){const fi=flowers.findIndex(f=>f.gx===px2&&f.gy===py2);if(fi===-1){ok=false;break;}fls.push(fi);}if(ok&&bees.length<MAX_BEES){const cx2=(x0+0.5)*T+T/2,cy2=(y0+0.5)*T+T/2;fls.sort((a,b)=>b-a);for(const fi of fls){grid[flowers[fi].gy][flowers[fi].gx]='empty';flowers.splice(fi,1);}const bee=mkA('bee',0,0);bee.x=cx2;bee.y=cy2;bees.push(bee);spawnP(cx2,cy2,'#ffe030','#ffaa00');disc_('bee','Pollinator attracted');return true;}}return false;}
-function chkSpawn(){const bc=cntB(),tc=cntT();const tR=Math.min(MRB,Math.max(totalSP>=3||bushes.length>0?1:0,Math.floor(bc/5)));while(rB.length<tR){const a=Math.random()*Math.PI*2,d=15+Math.random()*10;rB.push(mkA('redBird',CX+Math.cos(a)*d,CY+Math.sin(a)*d));if(rB.length===1)disc_('redBird','Red bird detected');}if(bc>=10){const tBB=Math.min(MBB,Math.max(1,1+Math.floor(tc/3)));while(bB.length<tBB){const a=Math.random()*Math.PI*2,d=15+Math.random()*10;const b=mkA('blueBird',CX+Math.cos(a)*d,CY+Math.sin(a)*d);if(bB.length===0){b.isFirst=true;b.hPF=false;}bB.push(b);if(bB.length===1)disc_('blueBird','Blue bird detected');}}if(tc>=20){const tBV=Math.min(MAX_BV,Math.floor((tc-10)/10));while(beavers.length<tBV){const a=Math.random()*Math.PI*2,d=10+Math.random()*8;beavers.push(mkA('beaver',CX+Math.cos(a)*d,CY+Math.sin(a)*d));if(beavers.length===1)disc_('beaver','Beaver detected');}}}
+function chkSpawn(){const bc=cntB(),tc=cntT();const tR=Math.min(MRB,Math.max(totalSP>=3||bushes.length>0?1:0,Math.floor(bc/5)));while(rB.length<tR){const a=Math.random()*Math.PI*2,d=15+Math.random()*10;rB.push(mkA('redBird',CX+Math.cos(a)*d,CY+Math.sin(a)*d));if(rB.length===1)disc_('redBird','Red bird detected');}if(bc>=3){const tBB=Math.min(MBB,Math.max(1,1+Math.floor(tc/3)));while(bB.length<tBB){const a=Math.random()*Math.PI*2,d=15+Math.random()*10;const b=mkA('blueBird',CX+Math.cos(a)*d,CY+Math.sin(a)*d);if(bB.length===0){b.isFirst=true;b.hPF=false;}bB.push(b);if(bB.length===1)disc_('blueBird','Blue bird detected');}}if(tc>=6){const tBV=Math.min(MAX_BV,Math.floor((tc-10)/10));while(beavers.length<tBV){const a=Math.random()*Math.PI*2,d=10+Math.random()*8;beavers.push(mkA('beaver',CX+Math.cos(a)*d,CY+Math.sin(a)*d));if(beavers.length===1)disc_('beaver','Beaver detected');}}}
 function updBushes(dt){for(const b of bushes){if(b.st==='sprout'){b.timer-=dt;if(b.timer<=0){b.st='bush';grid[b.gy][b.gx]='bush';spawnP(b.gx*T+T/2,b.gy*T+T/2,'#30aa30','#50ff50');disc_('bush','Mature bushes');}}}}
 function updTrees(dt){for(const t of trees){if(t.st==='sprout'){t.timer-=dt;if(t.timer<=0){t.st='tree';grid[t.gy][t.gx]='tree';t.hasSeed=false;t.seedT=15+Math.random()*20;spawnP(t.gx*T+T/2,t.gy*T+T/2,'#20cc40','#50ff50');disc_('tree','Trees detected');}}else if(t.st==='tree'&&!t.hasSeed){const tsOn=trees.filter(x=>x.st==='tree'&&x.hasSeed).length;if(tsOn+tSP.length<MTS){t.seedT-=dt;if(t.seedT<=0){t.seedT=20+Math.random()*30;if(Math.random()<0.3){t.hasSeed=true;disc_('treeSeed','Tree seed');}}}}}}
 function updTasks(){let ch=false;for(const t of TASKS){if(!tasksDone.has(t.id)&&t.check()){tasksDone.add(t.id);ch=true;showTB();}}if(galOpen&&galPage==='tasks')renderPage();}
@@ -1021,8 +1021,8 @@ function renderDbg(){
 <button class="dbg-speed-btn ${curSpd===10?'active':''}" data-speed="10">[R:x10]</button>
 </div>
 <button class="dbg-btn" data-dbg="seeds">> Plant 3 seeds</button>
-<button class="dbg-btn" data-dbg="bushes">> Grow 10 bushes</button>
-<button class="dbg-btn" data-dbg="trees">> Grow 20 trees</button>
+<button class="dbg-btn" data-dbg="bushes">> Grow 3 bushes</button>
+<button class="dbg-btn" data-dbg="trees">> Grow 6 trees</button>
 <button class="dbg-btn" data-dbg="river">> Trigger river</button>
 <button class="dbg-btn" data-dbg="reeds">> Spawn reeds</button>
 <button class="dbg-btn" data-dbg="frogs">> Spawn frogs</button>
@@ -1044,11 +1044,11 @@ function runDbg(cmd){
     disc_('seed','[DBG] Seeds');
   }
   if(cmd==='bushes'||cmd==='all'){
-    for(let i=0;i<12;i++){const s=dbgSpot();if(s){grid[s.y][s.x]='bush';bushes.push({gx:s.x,gy:s.y,st:'bush',timer:0});}}
+    for(let i=0;i<4;i++){const s=dbgSpot();if(s){grid[s.y][s.x]='bush';bushes.push({gx:s.x,gy:s.y,st:'bush',timer:0});}}
     disc_('bush','[DBG] Bushes');disc_('bushSprout','[DBG]');
   }
   if(cmd==='trees'||cmd==='all'){
-    for(let i=0;i<22;i++){const s=dbgSpot();if(s){grid[s.y][s.x]='tree';trees.push({gx:s.x,gy:s.y,st:'tree',timer:0,seedT:15+Math.random()*20,hasSeed:false});}}
+    for(let i=0;i<8;i++){const s=dbgSpot();if(s){grid[s.y][s.x]='tree';trees.push({gx:s.x,gy:s.y,st:'tree',timer:0,seedT:15+Math.random()*20,hasSeed:false});}}
     disc_('tree','[DBG] Trees');disc_('treeSprout','[DBG]');disc_('treeSeed','[DBG]');
   }
   if(cmd==='river'||cmd==='all'){
