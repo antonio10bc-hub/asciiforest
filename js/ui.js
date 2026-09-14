@@ -6,12 +6,12 @@ document.getElementById('gallery-backdrop').addEventListener('click',closeGal);
 document.getElementById('gallery-close').addEventListener('click',closeGal);
 document.querySelectorAll('.gallery-tab').forEach(t=>{t.addEventListener('click',()=>{galPage=t.dataset.page;document.querySelectorAll('.gallery-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');renderPage();});});
 
-function progBar(cur,max){if(!max||max<=0)return'[░░░░░░░░░░]';const w=10,f=Math.max(0,Math.min(w,Math.round(cur/max*w))),e=w-f;return'['+('█'.repeat(f))+('░'.repeat(e))+']';}
+function progBar(cur,max){if(!max||max<=0)return'[..........]';const w=10,f=Math.max(0,Math.min(w,Math.round(cur/max*w))),e=w-f;return'['+('#'.repeat(f))+('.'.repeat(e))+']';}
 
 function renderPage(){const cont=EL['gallery-content'];
 if(galPage==='tasks'){const pending=TASKS.filter(t=>!tasksDone.has(t.id)),done=TASKS.filter(t=>tasksDone.has(t.id));let h='';h+=`<div class="gal-count">${done.length} / ${TASKS.length} COMPLETE</div>`;
 if(pending.length>0){const cur=pending[0];h+=`<div class="task-item current"><span class="task-check">&gt;</span><span class="task-text">${cur.text}</span></div>`;}
-else h+=`<div class="task-item current"><span class="task-check">&gt;</span><span class="task-text">The grove is whole. Tend it.</span></div>`;if(done.length>0)h+=`<div class="task-sep">── COMPLETED ──</div>`;for(const t of done)h+=`<div class="task-item done"><span class="task-check">[✓]</span><span class="task-text">${t.text}</span></div>`;cont.innerHTML=h;return;}
+else h+=`<div class="task-item current"><span class="task-check">&gt;</span><span class="task-text">The grove is whole. Tend it.</span></div>`;if(done.length>0)h+=`<div class="task-sep">-- COMPLETED --</div>`;for(const t of done)h+=`<div class="task-item done"><span class="task-check">[x]</span><span class="task-text">${t.text}</span></div>`;cont.innerHTML=h;return;}
 const entries=GAL[galPage]||[];let found=0;for(const e of entries)if(disc[e.key])found++;
 let h=`<div class="gal-count">${found} / ${entries.length} RECORDED</div><div id="gallery-grid">`;
 for(const e of entries){const u=!!disc[e.key],prog=e.prog;

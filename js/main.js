@@ -1,4 +1,4 @@
-const goFireChars=['▲','♦','▴','*','▲','♦','▴'];
+const goFireChars=['Å','^','Â','*','^','Å','Â'];
 const goFireColors=['#ff2010','#ff8020','#ffcc10','#ff6020','#ff4010'];
 function updGOFlames(){
   if(!gameOver)return;

@@ -17,14 +17,14 @@ function inEarlyTasks(){return !tasksDone.has(TASKS[1].id);}
 function hintLines(){
   const l=[];
   if(sel&&sel.type==='aS')l.push('now tap bare ground to plant it');
-  else if(altarSeed)l.push('tap the ✦ above the altar to take a seed');
+  else if(altarSeed)l.push('tap the * above the altar to take a seed');
   else if(totalSIG()<MAX_SEEDS)l.push('the altar is growing another seed…');
   if(!tasksDone.has(TASKS[0].id)){
     if(totalSP>0)l.push('plant '+(3-totalSP)+' more to stir something awake');
-    l.push('tap ▣ LOG to read your task');
+    l.push('tap [#] LOG to read your task');
   }else{
     l.push('red birds carry seeds — bushes follow');
-    l.push('tap ▣ LOG to read your task');
+    l.push('tap [#] LOG to read your task');
   }
   l.push('drag to look around · scroll to zoom');
   return l;

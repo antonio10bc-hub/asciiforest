@@ -80,33 +80,49 @@ function fadeFireSound(){if(!fireAudio)return;const a=fireAudio;const fade=setIn
 function updVol(){SND.bgm.volume=volMusic*0.5;}
 const FC=['#ff4060','#ff8830','#ff30c0','#f0e030','#30e8ff','#c060ff','#ff6030','#30ffa0'];
 // Symbol & color definitions
+// VT323 only covers ASCII + Latin-1 — everything outside that (card suits, block
+// elements, Greek, dingbats) silently falls back to a system font, which is why
+// the old glyphs never matched the terminal text and, worse, measured a
+// different advance width. Every glyph below is inside the font, so the world
+// and the UI now render in one typeface at one cell width, which is what lets
+// the multi-line sprites in SPR line up at all.
 const SYM={
   grass:['.','.',',',',','\'','`',' ',' ',' '],
-  altar:['░','▒','▓'],
-  altarCenter:'◆',
-  altarSeed:'✦',
-  seed:'°',
-  bushSprout:'♣',
-  bush:'♣',
-  treeSeed:'◇',
-  treeSprout:'†',
-  tree:'♠',
-  treeWithSeed:'♠',
-  river:['~','≈','~','∽'],
-  reedSprout:'¦',
-  reed:'¶',
-  flower:'✿',
-  redBird:'♦',
-  blueBird:'♦',
-  beaver:'Θ',
-  frog:'Φ',
-  bee:'∞',
-  deerAdult:'Ω',
-  deerBaby:'ω',
-  fire:['▲','♦','▴','*'],
-  burned:'░',
-  waterDrop:'≋',
-  particle:'·',
+  altar:[':','#','@'],
+  altarCenter:'\u00d8',
+  altarSeed:'*',
+  seed:'\u00b0',
+  treeSeed:'\u00f0',
+  river:['--','==','--','__'],// two glyphs fill the tile; see the '~' note above
+  reedSprout:'\u00a6',
+  reed:'!',
+  fire:['\u00c5','^','\u00c2','*'],
+  burned:'%',
+  waterDrop:'=',
+  particle:'\u00b7',
+};
+
+// Multi-glyph sprites. One character can only ever be a symbol for a tree; a
+// small stack of them can actually look like one. Lines are drawn centred on the
+// entity's anchor, top to bottom, `lh` apart; `sway` marks foliage that drifts
+// with the wind. Everything an entity needs to draw itself lives here, so
+// retuning the look never means touching render().
+const SPR={
+  tree:      {l:[' ,\u00f8, ','(\u00f8\u00f8\u00f8)','  ||  '],sz:[13,13,9],lh:9,dy:-4,sway:2},
+  treeSprout:{l:['Y','|'],sz:[14,8],lh:8,dy:-2,sway:1},
+  bush:      {l:['\u00f8\u00d8\u00f8'],sz:16,sway:1},
+  bushSprout:{l:['\\|/'],sz:12,sway:1},
+  flower:    {l:['\u00a4','|'],sz:[15,9],lh:8,dy:-3,sway:1},
+  reed:      {l:['!'],sz:20,sway:2},
+  reedSprout:{l:['\u00a6'],sz:16,sway:2},
+  deer:      {l:['\u00a5','m'],sz:17,lh:13,dy:-4},
+  fawn:      {l:['\u00b0','n'],sz:13,lh:9,dy:-2},
+  beaver:    {l:['(oo)='],sz:13},
+  frog:      {l:['\u00b0\u00b0','(_)'],sz:13,lh:9,dy:-2},
+  // Two-frame wing beats, picked by the flap clock in render().
+  bird:      {l:['\\v/'],alt:['_v_'],sz:15},
+  bee:       {l:['}\u00f8{'],alt:['\u00bbo\u00ab'],sz:14},
+  altar:     {l:['\u00d8','==='],sz:17,lh:12,dy:-3},
 };
 const COL={
   bgDark:'#020802',
@@ -150,23 +166,25 @@ const COL={
   dim:'#0a2a0a',
 };
 
+// Gallery icons: the signature line of each world sprite, so the log shows the
+// same creature the player just met rather than an unrelated symbol.
 const GAL={plants:[
 {key:'seed',name:'SEED',sym:SYM.seed,col:COL.seedGold,prog:null},
-{key:'bushSprout',name:'SPROUT',sym:SYM.bushSprout,col:COL.bushDim,prog:null},
-{key:'bush',name:'BUSH',sym:SYM.bush,col:COL.bushBright,prog:{current:()=>cntB(),max:3}},
+{key:'bushSprout',name:'SPROUT',sym:'\\|/',col:COL.bushDim,prog:null},
+{key:'bush',name:'BUSH',sym:SPR.bush.l[0],col:COL.bushBright,prog:{current:()=>cntB(),max:3}},
 {key:'treeSeed',name:'TREE SEED',sym:SYM.treeSeed,col:COL.tSeedCyan,prog:null},
-{key:'treeSprout',name:'SAPLING',sym:SYM.treeSprout,col:COL.treeDim,prog:null},
-{key:'tree',name:'TREE',sym:SYM.tree,col:COL.treeBright,prog:{current:()=>cntT(),max:6}},
-{key:'river',name:'RIVER',sym:'≈',col:COL.riverCyan,prog:null},
+{key:'treeSprout',name:'SAPLING',sym:'Y',col:COL.treeDim,prog:null},
+{key:'tree',name:'TREE',sym:SPR.tree.l[1],col:COL.treeBright,prog:{current:()=>cntT(),max:6}},
+{key:'river',name:'RIVER',sym:'===',col:COL.riverCyan,prog:null},
 {key:'reed',name:'REED',sym:SYM.reed,col:COL.reedBright,prog:null},
-{key:'flower',name:'FLOWER',sym:SYM.flower,col:COL.flowerPink,prog:{current:()=>flowers.length,max:MAX_FLOWERS}},
+{key:'flower',name:'FLOWER',sym:SPR.flower.l[0],col:COL.flowerPink,prog:{current:()=>flowers.length,max:MAX_FLOWERS}},
 ],animals:[
-{key:'redBird',name:'RED BIRD',sym:SYM.redBird,col:COL.redBird,prog:{current:()=>rB.length,max:MRB}},
-{key:'blueBird',name:'BLUE BIRD',sym:SYM.blueBird,col:COL.blueBird,prog:{current:()=>bB.length,max:MBB}},
-{key:'beaver',name:'BEAVER',sym:SYM.beaver,col:COL.beaverAmber,prog:{current:()=>beavers.length,max:MAX_BV}},
-{key:'frog',name:'FROG',sym:SYM.frog,col:COL.frogGreen,prog:{current:()=>frogs.length,max:MAX_FROGS}},
-{key:'bee',name:'BEE',sym:SYM.bee,col:COL.beeYellow,prog:{current:()=>bees.length,max:MAX_BEES}},
-{key:'deer',name:'DEER',sym:SYM.deerAdult,col:COL.deerAmber,prog:{current:()=>cntDeer(),max:MAX_DEER}},
+{key:'redBird',name:'RED BIRD',sym:SPR.bird.l[0],col:COL.redBird,prog:{current:()=>rB.length,max:MRB}},
+{key:'blueBird',name:'BLUE BIRD',sym:SPR.bird.l[0],col:COL.blueBird,prog:{current:()=>bB.length,max:MBB}},
+{key:'beaver',name:'BEAVER',sym:SPR.beaver.l[0],col:COL.beaverAmber,prog:{current:()=>beavers.length,max:MAX_BV}},
+{key:'frog',name:'FROG',sym:SPR.frog.l[0],col:COL.frogGreen,prog:{current:()=>frogs.length,max:MAX_FROGS}},
+{key:'bee',name:'BEE',sym:SPR.bee.l[0],col:COL.beeYellow,prog:{current:()=>bees.length,max:MAX_BEES}},
+{key:'deer',name:'DEER',sym:SPR.deer.l[0],col:COL.deerAmber,prog:{current:()=>cntDeer(),max:MAX_DEER}},
 ]};
 const TASKS=[
 {id:'plant3',text:'Plant 3 seeds in the ground',check:()=>totalSP>=3},

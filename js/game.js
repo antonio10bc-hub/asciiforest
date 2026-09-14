@@ -26,20 +26,20 @@ function updDay(){
     // Horizon line
     cx2.strokeStyle='rgba(255,255,255,0.3)';cx2.beginPath();cx2.moveTo(2,ch/2);cx2.lineTo(cw-2,ch/2);cx2.stroke();
     // Angle: 0=sunrise(right), rotates clockwise. dayProgress 0=sunrise
-    const angle=dayProgress*Math.PI*2-Math.PI/2;
+    const angle=dayProgress*Math.PI*2;// 0 = sunrise, .25 = noon, .5 = sunset
     const sunX=cw/2+Math.cos(angle)*17;
     const sunY=ch/2-Math.sin(angle)*20;
     const moonX=cw/2+Math.cos(angle+Math.PI)*17;
     const moonY=ch/2-Math.sin(angle+Math.PI)*20;
     // Sun (big)
-    cx2.font="24px 'VT323',monospace";cx2.textAlign='center';cx2.textBaseline='middle';
+    cx2.font="22px 'VT323',monospace";cx2.textAlign='center';cx2.textBaseline='middle';
     cx2.shadowColor='#ffcc30';cx2.shadowBlur=sunY<ch/2?8:0;
     cx2.fillStyle=sunY<ch/2?'#ffdd40':'rgba(255,200,48,0.2)';
-    cx2.fillText('\u2600',sunX,sunY);
+    cx2.fillText('\u00a4',sunX,sunY);
     // Moon (big)
     cx2.shadowColor='#c0c8e0';cx2.shadowBlur=moonY<ch/2?6:0;
     cx2.fillStyle=moonY<ch/2?'#d0d8f0':'rgba(192,200,224,0.2)';
-    cx2.fillText('\u263d',moonX,moonY);
+    cx2.fillText('(',moonX,moonY);
     cx2.shadowBlur=0;
   }
   // Notification badge: show only when new tasks completed since last gallery visit

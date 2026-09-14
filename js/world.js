@@ -2,6 +2,29 @@
 function dCh(ch,wx,wy,col,sz){X.fillStyle=col;setFont(fontPx(sz||18));X.textAlign='center';X.textBaseline='middle';X.fillText(ch,wx,wy);}
 function dChG(ch,wx,wy,col,sz,gl){X.shadowColor=col;X.shadowBlur=gl||6;dCh(ch,wx,wy,col,sz);X.shadowBlur=0;}
 
+// === SPRITES ===
+// Draws an SPR entry centred on (wx,wy). Foliage drifts with one shared wind
+// phase so the whole forest leans together instead of each plant jittering on
+// its own; `ph` (usually the tile x) staggers the wave across the map.
+function wind(ph,amt){return Math.sin(tt*0.7+ph*0.35)*amt+Math.sin(tt*1.9+ph*0.8)*amt*0.35;}
+function drawSpr(sp,wx,wy,col,glow,ph,frame){
+  const lines=(frame&&sp.alt)?sp.alt:sp.l;
+  const lh=sp.lh||0,sway=sp.sway?wind(ph||0,sp.sway):0;
+  const szs=Array.isArray(sp.sz)?sp.sz:null;
+  if(!szs)setFont(fontPx(sp.sz));
+  X.textAlign='center';X.textBaseline='middle';
+  X.fillStyle=col;
+  if(glow){X.shadowColor=col;X.shadowBlur=glow;}
+  let y=wy+(sp.dy||0)-((lines.length-1)*lh)/2;
+  for(let i=0;i<lines.length;i++){
+    if(szs)setFont(fontPx(szs[i]));
+    // the top line sways most, the base stays planted
+    const f=lines.length>1?1-i/(lines.length-1):1;
+    X.fillText(lines[i],wx+sway*f,y);y+=lh;
+  }
+  if(glow)X.shadowBlur=0;
+}
+
 // === UTILITIES ===
 function totalSIG(){return(altarSeed?1:0)+seeds.length;}
 function dist(a,b,c,d){return Math.sqrt((c-a)**2+(d-b)**2);}

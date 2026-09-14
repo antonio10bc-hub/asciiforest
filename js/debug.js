@@ -4,7 +4,7 @@ EL['debug-btn'].addEventListener('click',()=>{dbgOpen=!dbgOpen;EL['debug-panel']
 function renderDbg(){
   const p=EL['debug-panel'];
   const curSpd=spdMult;
-  p.innerHTML=`<div class="dbg-title">┌─ DEBUG CONSOLE ─┐</div>
+  p.innerHTML=`<div class="dbg-title">+-- DEBUG CONSOLE --+</div>
 <div style="margin-bottom:8px;display:flex;gap:4px;">
 <button class="dbg-speed-btn ${curSpd===1?'active':''}" data-speed="1">[Q:x1]</button>
 <button class="dbg-speed-btn ${curSpd===2?'active':''}" data-speed="2">[W:x2]</button>

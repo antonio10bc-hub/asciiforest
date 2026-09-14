@@ -97,7 +97,23 @@ Two gates do **not** match their task text, and that is load-bearing if you touc
 
 `render()` draws in fixed layers into one canvas under a camera transform (`cam.x/y/z`, pan + pinch/wheel zoom), with viewport culling (`s0/s1/e0/e1`) computed from `cam`: terrain (grass noise, river, fire, burned) → altar center + seed → grid objects (seeds, reeds, flowers, plants) → entities, depth-sorted by `y` → particles/CTA/tutorial → screen-space HUD (`X.setTransform(1,0,0,1,0,0)` inside a `save`/`restore`) → warm phosphor tint → day/night alpha overlay. The whole frame is wrapped in `X.globalAlpha = flickerA` for the CRT flicker.
 
-All glyphs and colors are centralized in **`SYM`** and **`COL`** (`js/state.js`). Use them rather than inlining characters or hex values. Grass variation comes from `gV`/`gD`, two 60×60 noise arrays generated **once at load** and deliberately not regenerated on restart. Scanlines, vignette, and the border flash are CSS (`#scanlines`, `#vignette`, `#border-flash`), not canvas.
+### The glyph rule — read this before adding any character
+
+**VT323 only covers ASCII + Latin-1 (201 glyphs).** Anything outside that — card suits, block elements, box drawing, Greek, dingbats, arrows — silently renders in a *system fallback font*: different weight, different style, and a different advance width (60.2 vs 40 per 100px). Nothing errors; it just quietly stops looking like the same game. Every glyph in `SYM`, `SPR`, `GAL` and the DOM chrome is inside the font, and must stay that way.
+
+There is a second trap that the width check cannot catch, because the glyph *is* in the font: **VT323 draws `~` as a steep zigzag that reads as a capital N** at every size this game uses — world sprites, screen-space HUD and DOM chrome alike. It is gone from all visible text; use `-`, `=` or `_` for water, tails and wings instead. The lesson generalises: a covered glyph can still be the wrong shape, so look at a new character on screen before keeping it.
+
+Both rules are checked, not assumed: the font audit walks `SYM`/`SPR`/`GAL` plus the overlay's DOM text and measures every distinct character against VT323's advance width.
+
+### Sprites
+
+One character can only ever be a *symbol* for a tree; a small stack of them can look like one. **`SPR`** (`js/state.js`) holds multi-line sprites — `l` (lines, drawn centred on the anchor and `lh` apart), `sz` (a number, or one size per line so a trunk is not a full line-height tall), `dy`, `sway`, and an optional `alt` second frame for wing beats. `drawSpr()` (`js/world.js`) renders one. Because every glyph shares an advance width, the lines actually align into a grid — which is the whole reason the font rule above is load-bearing rather than cosmetic.
+
+`SYM` keeps the things that are genuinely one character (grass, seeds, river, fire, the altar ring). Add new creatures to `SPR`, and give `GAL` the sprite's signature line so the log shows what the player met.
+
+Foliage drifts with one shared wind phase (`wind()`), staggered by tile x, so the forest leans together instead of each plant jittering alone; the top line of a sprite sways most and the base stays planted.
+
+All glyphs and colors are centralized in **`SYM`**/**`SPR`** and **`COL`** (`js/state.js`). Use them rather than inlining characters or hex values. Grass variation comes from `gV`/`gD`, two 60×60 noise arrays generated **once at load** and deliberately not regenerated on restart. Scanlines, vignette, and the border flash are CSS (`#scanlines`, `#vignette`, `#border-flash`), not canvas.
 
 The UI chrome (banner, task bubble, gallery modal, settings, debug panel, game-over screen, hint strip) is DOM inside `#ui-overlay`, styled in `css/style.css` and mutated imperatively. The day/night clock is its own small 52×56 canvas, redrawn by `updDay()` only when the sun actually moves a step.
 
@@ -107,6 +123,7 @@ The UI chrome (banner, task bubble, gallery modal, settings, debug panel, game-o
 
 - **`setFont(...)`, never `X.font = ...`.** Assigning `font` re-parses the shorthand, and the draw loops flip sizes hundreds of times a frame, so `setFont` (`js/state.js`) skips no-op writes. Its shadow copy goes stale whenever the real context state is rolled back, so **every `X.restore()` must be followed by `resetFontState()`**, and `resize()` calls it too (setting `canvas.width` wipes context state). Use `fontPx(n)` for a computed size rather than building the string inline.
 - **Grass is baked.** `gCh`/`gCI`/`GRASS_COLS` (`js/state.js`) precompute each tile's glyph and a quantised shade from `gV`/`gD` at load. The terrain pass queues tiles into `gBuf` per colour bucket and flushes one run each. If you ever make grass dynamic, that bake has to move or go.
+- **The day/night grade is three washes**, not one: cool for night, soft warm for daylight, and a golden band that only appears within a few seconds of the horizon crossing (`pow(1-|sunH|,5)`). `sunAngle` is computed identically in `render()` and `updDay()` — change one and you must change the other, or the sky and the clock widget disagree.
 - **Motion is opt-out.** The stylesheet has a `prefers-reduced-motion` block, and `updFlicker()` (`js/game.js`) checks the same query in JS because the CRT flicker is drawn into the canvas where CSS cannot reach it. New ambient animation needs both.
 - **`EL` caches every node touched per frame.** Add new per-frame DOM nodes to its id list instead of calling `getElementById` in a loop. One-shot paths (game over, restart) still use `getElementById` and that is fine.
 - **Ask the set about the plants, not the plants about the set.** `burnPlants()` (`js/fire.js`) sweeps the plant arrays once and does a `fireTiles.has()` per plant. Do not invert it back into a loop over `fireTiles` that scans arrays — that was O(tiles × plants) per frame.

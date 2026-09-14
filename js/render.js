@@ -68,78 +68,82 @@ for(let b=0;b<GRASS_STEPS;b++){
 // === ALTAR CENTER + SEED ===
 const mx=CX*T+T/2,my=CY*T+T/2;
 const aGl=6+Math.sin(tt*2)*3;
-X.shadowColor=COL.altarGlow;X.shadowBlur=aGl;
-X.fillStyle=COL.altarBright;setFont("22px 'VT323',monospace");X.textAlign='center';X.textBaseline='middle';
-X.fillText(SYM.altarCenter,mx,my);X.shadowBlur=0;
+X.shadowColor=COL.altarGlow;
+drawSpr(SPR.altar,mx,my,COL.altarBright,aGl);
 if(altarSeed){
   const bob=Math.sin(tt*4)*2;
   X.shadowColor=COL.seedGold;X.shadowBlur=10+Math.sin(tt*3)*4;
-  X.fillStyle=COL.seedGold;setFont("20px 'VT323',monospace");
-  X.fillText(SYM.altarSeed,mx,my-6+bob);X.shadowBlur=0;
-  if(sel&&sel.type==='aS')drawHL(mx,my-6+bob);
+  X.fillStyle=COL.seedGold;setFont(fontPx(20));X.textAlign='center';X.textBaseline='middle';
+  X.fillText(SYM.altarSeed,mx,my-14+bob);X.shadowBlur=0;
+  if(sel&&sel.type==='aS')drawHL(mx,my-14+bob);
 }
 
 // === GRID OBJECTS ===
-setFont("18px 'VT323',monospace");
+setFont(fontPx(18));X.textAlign='center';X.textBaseline='middle';
 for(const s of seeds){const sx=s.gx*T+T/2,sy=s.gy*T+T/2,b=Math.sin(tt*4+s.gx)*2;
   X.shadowColor=COL.seedGold;X.shadowBlur=6;X.fillStyle=COL.seedGold;X.fillText(SYM.seed,sx,sy+b);X.shadowBlur=0;}
 for(const s of tSP){const sx=s.gx*T+T/2,sy=s.gy*T+T/2,b=Math.sin(tt*3.5+s.gx)*2;
   X.shadowColor=COL.tSeedCyan;X.shadowBlur=6;X.fillStyle=COL.tSeedCyan;X.fillText(SYM.treeSeed,sx,sy+b);X.shadowBlur=0;}
 
 // Reeds
-for(const r of reeds){const sx=r.gx*T+T/2,sy=r.gy*T+T/2;const sw=Math.sin(tt*2.5+r.gx*0.3)*1;
-  if(r.st==='sprout'){X.fillStyle=COL.reedGreen;X.fillText(SYM.reedSprout,sx+sw,sy);}
-  else{X.shadowColor=COL.reedBright;X.shadowBlur=4;X.fillStyle=COL.reedBright;X.fillText(SYM.reed,sx+sw,sy);X.shadowBlur=0;}}
+for(const r of reeds){const sx=r.gx*T+T/2,sy=r.gy*T+T/2;
+  if(r.st==='sprout')drawSpr(SPR.reedSprout,sx,sy,COL.reedGreen,0,r.gx);
+  else drawSpr(SPR.reed,sx,sy,COL.reedBright,4,r.gx);}
 
 // Flowers
-for(const f of flowers){const sx=f.gx*T+T/2,sy=f.gy*T+T/2,b=Math.sin(tt*2+f.gx*0.5)*1;
-  X.shadowColor=f.col;X.shadowBlur=6;X.fillStyle=f.col;X.fillText(SYM.flower,sx,sy+b);X.shadowBlur=0;
-  if(sel&&sel.type==='flower'&&sel.ref===f)drawHL(sx,sy+b);}
+for(const f of flowers){const sx=f.gx*T+T/2,sy=f.gy*T+T/2;
+  drawSpr(SPR.flower,sx,sy,f.col,6,f.gx);
+  if(sel&&sel.type==='flower'&&sel.ref===f)drawHL(sx,sy-4);}
 
 // Bushes
 for(const b of bushes){const sx=b.gx*T+T/2,sy=b.gy*T+T/2;
-  if(b.st==='sprout'){X.fillStyle=COL.bushDim;setFont("12px 'VT323',monospace");X.fillText(SYM.bushSprout,sx,sy);setFont("18px 'VT323',monospace");}
-  else{X.shadowColor=COL.bushBright;X.shadowBlur=4;X.fillStyle=COL.bushBright;setFont("16px 'VT323',monospace");X.fillText(SYM.bush,sx,sy);setFont("18px 'VT323',monospace");X.shadowBlur=0;}}
+  if(b.st==='sprout')drawSpr(SPR.bushSprout,sx,sy,COL.bushDim,0,b.gx);
+  else drawSpr(SPR.bush,sx,sy,COL.bushBright,4,b.gx);}
 
 // Trees
 for(const t of trees){const sx=t.gx*T+T/2,sy=t.gy*T+T/2;
-  if(t.st==='sprout'){X.fillStyle=COL.treeDim;setFont("22px 'VT323',monospace");X.fillText(SYM.treeSprout,sx,sy);setFont("18px 'VT323',monospace");}
-  else{X.shadowColor=COL.treeGlow;X.shadowBlur=8;X.fillStyle=COL.treeBright;setFont("48px 'VT323',monospace");X.fillText(SYM.tree,sx,sy-6);setFont("18px 'VT323',monospace");X.shadowBlur=0;
-    if(t.hasSeed){const sb=Math.sin(tt*3+t.gx)*1.5;X.shadowColor=COL.tSeedCyan;X.shadowBlur=6;X.fillStyle=COL.tSeedCyan;setFont("14px 'VT323',monospace");X.fillText('◇',sx+10,sy-14+sb);setFont("18px 'VT323',monospace");X.shadowBlur=0;}}
-  if(sel&&sel.type==='tS'&&sel.ref===t)drawHL(sx,sy);
-  if(sel&&sel.type==='beaver'&&sel.ref&&sel.ref.chop&&sel.ref.chop.gx===t.gx&&sel.ref.chop.gy===t.gy)drawHL(sx,sy);}
+  if(t.st==='sprout')drawSpr(SPR.treeSprout,sx,sy,COL.treeDim,0,t.gx);
+  else{
+    X.shadowColor=COL.treeGlow;
+    drawSpr(SPR.tree,sx,sy,COL.treeBright,8,t.gx);
+    if(t.hasSeed){const sb=Math.sin(tt*3+t.gx)*1.5,sw=wind(t.gx,2);
+      X.shadowColor=COL.tSeedCyan;X.shadowBlur=6;X.fillStyle=COL.tSeedCyan;setFont(fontPx(13));
+      X.fillText(SYM.treeSeed,sx+13+sw,sy-16+sb);X.shadowBlur=0;setFont(fontPx(18));}
+  }
+  if(sel&&sel.type==='tS'&&sel.ref===t)drawHL(sx,sy-6);
+  if(sel&&sel.type==='beaver'&&sel.ref&&sel.ref.chop&&sel.ref.chop.gx===t.gx&&sel.ref.chop.gy===t.gy)drawHL(sx,sy-6);}
 for(const b of bushes){if(sel&&sel.type==='beaver'&&sel.ref&&sel.ref.chop&&sel.ref.chop.gx===b.gx&&sel.ref.chop.gy===b.gy)drawHL(b.gx*T+T/2,b.gy*T+T/2);}
 
 // === ENTITIES ===
 // Depth sort reuses one buffer of one wrapper per slot, so a frame of rendering
 // no longer allocates six spread arrays plus an object for every entity alive.
+// Each slot now carries an SPR entry rather than a single character.
 let an=0;
-function pushEnt(r,sym,col,sz){const e=entBuf[an]||(entBuf[an]={r:null,sym:'',col:'',sz:18});e.r=r;e.sym=sym;e.col=col;e.sz=sz;an++;}
-for(const b of rB)pushEnt(b,SYM.redBird,COL.redBird,18);
-for(const b of bB)pushEnt(b,SYM.blueBird,COL.blueBird,18);
-for(const b of beavers)pushEnt(b,SYM.beaver,COL.beaverAmber,18);
-for(const f of frogs)pushEnt(f,SYM.frog,COL.frogGreen,18);
-for(const b of bees)pushEnt(b,SYM.bee,COL.beeYellow,18);
-for(const d of deers)pushEnt(d,d.isBaby?SYM.deerBaby:SYM.deerAdult,d.isBaby?COL.deerBabyCol:COL.deerAmber,d.isBaby?16:26);
+function pushEnt(r,sp,col){const e=entBuf[an]||(entBuf[an]={r:null,sp:null,col:''});e.r=r;e.sp=sp;e.col=col;an++;}
+for(const b of rB)pushEnt(b,SPR.bird,COL.redBird);
+for(const b of bB)pushEnt(b,SPR.bird,COL.blueBird);
+for(const b of beavers)pushEnt(b,SPR.beaver,COL.beaverAmber);
+for(const f of frogs)pushEnt(f,SPR.frog,COL.frogGreen);
+for(const b of bees)pushEnt(b,SPR.bee,COL.beeYellow);
+for(const d of deers)pushEnt(d,d.isBaby?SPR.fawn:SPR.deer,d.isBaby?COL.deerBabyCol:COL.deerAmber);
 const all=entBuf.slice(0,an).sort((a,b)=>a.r.y-b.r.y);
-setFont("18px 'VT323',monospace");
+// Wings beat faster while actually travelling.
+const flapFast=Math.floor(tt*9)%2===1,flapSlow=Math.floor(tt*4)%2===1;
+setFont(fontPx(18));X.textAlign='center';X.textBaseline='middle';
 for(const a of all){
   const wobble=a.r.mv?Math.sin(tt*8+a.r.x*0.1)*1.5:Math.sin(tt*2+a.r.x*0.05)*0.5;
-  const ch=a.sym;
-  X.shadowColor=a.col;X.shadowBlur=6;X.fillStyle=a.col;
-  if(a.sz!==18)setFont(fontPx(a.sz));
-  X.fillText(ch,a.r.x,a.r.y+wobble);
-  if(a.sz!==18)setFont("18px 'VT323',monospace");
-  X.shadowBlur=0;
+  const frame=a.sp.alt?(a.r.mv?flapFast:flapSlow):false;
+  X.shadowColor=a.col;
+  drawSpr(a.sp,a.r.x,a.r.y+wobble,a.col,6,0,frame);
   // Carry indicator
-  if(a.r.carry==='seed'){X.shadowColor=COL.seedGold;X.shadowBlur=4;X.fillStyle=COL.seedGold;setFont("10px 'VT323',monospace");X.fillText('°',a.r.x+6,a.r.y-6+wobble);setFont("18px 'VT323',monospace");X.shadowBlur=0;}
-  else if(a.r.carry==='treeSeed'){X.shadowColor=COL.tSeedCyan;X.shadowBlur=4;X.fillStyle=COL.tSeedCyan;setFont("10px 'VT323',monospace");X.fillText('◇',a.r.x+6,a.r.y-6+wobble);setFont("18px 'VT323',monospace");X.shadowBlur=0;}
+  if(a.r.carry==='seed'){X.shadowColor=COL.seedGold;X.shadowBlur=4;X.fillStyle=COL.seedGold;setFont(fontPx(11));X.fillText(SYM.seed,a.r.x+9,a.r.y-8+wobble);setFont(fontPx(18));X.shadowBlur=0;}
+  else if(a.r.carry==='treeSeed'){X.shadowColor=COL.tSeedCyan;X.shadowBlur=4;X.fillStyle=COL.tSeedCyan;setFont(fontPx(11));X.fillText(SYM.treeSeed,a.r.x+9,a.r.y-8+wobble);setFont(fontPx(18));X.shadowBlur=0;}
   if(sel&&sel.ref===a.r)drawHL(a.r.x,a.r.y+wobble);
   // When herd selected, highlight all joined deer
-  if(sel&&sel.type==='herd'&&deers.includes(a.r)&&a.r.joined){const ha=0.25+Math.sin(tt*4)*0.15;X.fillStyle=`rgba(204,136,64,${ha})`;setFont("12px 'VT323',monospace");X.fillText('·',a.r.x-8,a.r.y+wobble);X.fillText('·',a.r.x+8,a.r.y+wobble);setFont("18px 'VT323',monospace");}
+  if(sel&&sel.type==='herd'&&deers.includes(a.r)&&a.r.joined){const ha=0.25+Math.sin(tt*4)*0.15;X.fillStyle=`rgba(204,136,64,${ha})`;setFont(fontPx(12));X.fillText(SYM.particle,a.r.x-10,a.r.y+wobble);X.fillText(SYM.particle,a.r.x+10,a.r.y+wobble);setFont(fontPx(18));}
   if(a.r.type==='beaver'&&a.r.chop&&a.r.state==='goT'){drawDL(a.r.x,a.r.y,a.r.chop.gx*T+T/2,a.r.chop.gy*T+T/2);drawHL(a.r.chop.gx*T+T/2,a.r.chop.gy*T+T/2);}
   // Unjoined deer pulse indicator
-  if(deers.includes(a.r)&&!a.r.joined&&a.r.state!=='goTo'){const pa=0.3+Math.sin(tt*5)*0.25;X.fillStyle=`rgba(204,136,64,${pa})`;setFont("14px 'VT323',monospace");X.fillText('»',a.r.x-12,a.r.y+wobble);X.fillText('«',a.r.x+12,a.r.y+wobble);setFont("18px 'VT323',monospace");}
+  if(deers.includes(a.r)&&!a.r.joined&&a.r.state!=='goTo'){const pa=0.3+Math.sin(tt*5)*0.25;X.fillStyle=`rgba(204,136,64,${pa})`;setFont(fontPx(14));X.fillText('\u00bb',a.r.x-14,a.r.y+wobble);X.fillText('\u00ab',a.r.x+14,a.r.y+wobble);setFont(fontPx(18));}
 }
 
 drawCTA();drawP();drawTapLabel();drawTut();
@@ -147,27 +151,33 @@ drawCTA();drawP();drawTapLabel();drawTut();
 // Selection / Water HUD indicator
 {X.save();X.setTransform(DPR,0,0,DPR,0,0);setFont("28px 'VT323',monospace");X.textAlign='center';X.textBaseline='middle';
 let hudText=null,hudCol=null,hudGlow=null;
-if(hasWater){hudText='≋ WATER ≋';hudCol='rgba(64,192,255,';hudGlow=COL.waterBlue;}
+if(hasWater){hudText='= WATER =';hudCol='rgba(64,192,255,';hudGlow=COL.waterBlue;}
 else if(sel){
-  const labels={aS:['✦ SEED ✦','rgba(210,170,60,',COL.seedGold],tS:['◇ TREE SEED ◇','rgba(80,220,210,',COL.tSeedCyan],beaver:['◈ BEAVER ◈','rgba(180,120,50,',COL.beaverAmber],flower:['✿ FLOWER ✿','rgba(255,100,160,',COL.flowerPink],redBird:['♪ RED BIRD ♪','rgba(200,60,40,',COL.redBird],blueBird:['♪ BLUE BIRD ♪','rgba(80,140,220,',COL.blueBird],deer:['Ω DEER Ω','rgba(204,136,64,',COL.deerAmber],herd:['Ω HERD Ω','rgba(204,136,64,',COL.deerAmber]};
+  const labels={aS:['* SEED *','rgba(210,170,60,',COL.seedGold],tS:['ð TREE SEED ð','rgba(80,220,210,',COL.tSeedCyan],beaver:['( BEAVER )','rgba(180,120,50,',COL.beaverAmber],flower:['¤ FLOWER ¤','rgba(255,100,160,',COL.flowerPink],redBird:['\\ RED BIRD /','rgba(200,60,40,',COL.redBird],blueBird:['\\ BLUE BIRD /','rgba(80,140,220,',COL.blueBird],deer:['¥ DEER ¥','rgba(204,136,64,',COL.deerAmber],herd:['¥ HERD ¥','rgba(204,136,64,',COL.deerAmber]};
   const l=labels[sel.type];if(l){hudText=l[0];hudCol=l[1];hudGlow=l[2];}
 }
 if(hudText){const ha=0.6+Math.sin(tt*5)*0.3;X.shadowColor=hudGlow;X.shadowBlur=12;X.fillStyle=hudCol+ha+')';X.fillText(hudText,W/2,H-30);X.shadowBlur=0;}
 X.restore();resetFontState();}
 // Fire HP indicator
-if(firePhase==='active'&&!gameOver){X.save();X.setTransform(DPR,0,0,DPR,0,0);const fa=0.7+Math.sin(tt*4)*0.2;X.shadowColor=COL.fireGlow;X.shadowBlur=8;X.fillStyle=`rgba(255,80,32,${fa})`;setFont("22px 'VT323',monospace");X.textAlign='center';X.textBaseline='middle';const hpStr='FIRE '+'▲'.repeat(fireHP)+'·'.repeat(3-fireHP);X.fillText(hpStr,W/2,30);X.shadowBlur=0;X.restore();resetFontState();}
+if(firePhase==='active'&&!gameOver){X.save();X.setTransform(DPR,0,0,DPR,0,0);const fa=0.7+Math.sin(tt*4)*0.2;X.shadowColor=COL.fireGlow;X.shadowBlur=8;X.fillStyle=`rgba(255,80,32,${fa})`;setFont("22px 'VT323',monospace");X.textAlign='center';X.textBaseline='middle';const hpStr='FIRE '+'^'.repeat(fireHP)+'.'.repeat(3-fireHP);X.fillText(hpStr,W/2,30);X.shadowBlur=0;X.restore();resetFontState();}
 // Warm phosphor overlay
 X.fillStyle='rgba(30,50,20,0.02)';X.fillRect(cam.x,cam.y,W/cam.z,H/cam.z);
-// Day/night cycle overlay synced with clock
+// Day/night grade, synced with the clock widget. Three washes instead of one:
+// a cool one for night, a soft warm one for daylight, and a golden band that
+// only appears in the few seconds either side of the horizon crossing — which
+// is what makes sunrise and sunset read as events rather than a dimmer switch.
 const dayProgress2=(tt%300)/300;
-const sunAngle=dayProgress2*Math.PI*2-Math.PI/2;
-const brightness=Math.max(0,Math.sin(sunAngle));// 0=night, 1=noon
-const dayAlpha=brightness*0.12;
-X.fillStyle=`rgba(180,220,160,${dayAlpha})`;X.fillRect(cam.x,cam.y,W/cam.z,H/cam.z);
+const sunAngle=dayProgress2*Math.PI*2;// matches the clock widget in updDay()
+const sunH=Math.sin(sunAngle);// -1 = midnight, 0 = horizon, 1 = noon
+const vx=cam.x,vy=cam.y,vw=W/cam.z,vh=H/cam.z;
+if(sunH<0){X.fillStyle=`rgba(28,56,118,${(-sunH*0.26).toFixed(3)})`;X.fillRect(vx,vy,vw,vh);}
+else{X.fillStyle=`rgba(188,226,166,${(sunH*0.10).toFixed(3)})`;X.fillRect(vx,vy,vw,vh);}
+const golden=Math.pow(1-Math.abs(sunH),5);
+if(golden>0.02){X.fillStyle=`rgba(255,132,42,${(golden*0.17).toFixed(3)})`;X.fillRect(vx,vy,vw,vh);}
 X.restore();resetFontState();
 X.globalAlpha=1;
 }
 
 function drawHL(wx,wy){const a=0.5+Math.sin(tt*6)*0.3;X.shadowColor=COL.highlight;X.shadowBlur=8;X.fillStyle=`rgba(80,255,80,${a})`;setFont("18px 'VT323',monospace");X.fillText('[',wx-9,wy);X.fillText(']',wx+9,wy);X.shadowBlur=0;}
-function drawDL(x1,y1,x2,y2){const steps=Math.floor(dist(x1,y1,x2,y2)/8);X.fillStyle=`rgba(80,255,80,0.3)`;setFont("8px 'VT323',monospace");for(let i=0;i<steps;i++){const t2=i/steps;const px2=x1+(x2-x1)*t2,py2=y1+(y2-y1)*t2;if(Math.floor(tt*4+i)%2===0)X.fillText('·',px2,py2);}}
+function drawDL(x1,y1,x2,y2){const steps=Math.floor(dist(x1,y1,x2,y2)/8);X.fillStyle=`rgba(80,255,80,0.3)`;setFont(fontPx(8));for(let i=0;i<steps;i++){const t2=i/steps;const px2=x1+(x2-x1)*t2,py2=y1+(y2-y1)*t2;if(Math.floor(tt*4+i)%2===0)X.fillText('·',px2,py2);}}
 
