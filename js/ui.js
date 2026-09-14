@@ -32,7 +32,10 @@ function bindVol(id,get,set){
   const el=document.getElementById(id),out=document.getElementById(id+'-val');
   const show=v=>{if(out)out.textContent=Math.round(v*100);};
   el.value=Math.round(get()*100);show(get());
+  // 'input' keeps the audio and the readout live through a drag; 'change' fires
+  // once on release, which is where the write to storage belongs.
   el.addEventListener('input',e=>{set(e.target.value/100);show(get());});
+  el.addEventListener('change',savePrefs);
 }
 bindVol('vol-music',()=>volMusic,v=>{volMusic=v;updVol();});
 bindVol('vol-sfx',()=>volSFX,v=>{volSFX=v;});

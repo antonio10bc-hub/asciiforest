@@ -50,6 +50,29 @@ const SND={
   tap:new Audio('Sounds/tapsound.wav'),
 };
 let volMusic=0.25,volSFX=0.5,audioStarted=false,fireAudio=null;
+
+// === PREFERENCES ===
+// Saved settings, namespaced and versioned so a later shape change can be told
+// apart from this one. Every access is guarded: localStorage throws outright in
+// private windows and when site data is blocked, and the value that comes back
+// was last written by a machine we do not control, so it is validated rather
+// than trusted. Failing to load or save must never stop the game starting.
+const PREFS_KEY='spiritgrove.prefs.v1';
+function num01(v,fallback){const n=typeof v==='number'?v:NaN;return Number.isFinite(n)?Math.min(1,Math.max(0,n)):fallback;}
+function loadPrefs(){
+  let raw=null;
+  try{raw=localStorage.getItem(PREFS_KEY);}catch(e){return;}// storage blocked
+  if(!raw)return;
+  let p;try{p=JSON.parse(raw);}catch(e){return;}// corrupted entry: fall back to defaults
+  if(!p||typeof p!=='object')return;
+  volMusic=num01(p.volMusic,volMusic);
+  volSFX=num01(p.volSFX,volSFX);
+}
+function savePrefs(){
+  try{localStorage.setItem(PREFS_KEY,JSON.stringify({volMusic,volSFX}));}catch(e){}// quota or blocked
+}
+loadPrefs();
+
 SND.bgm.loop=true;SND.bgm.volume=volMusic*0.5;
 function initAudio(){if(audioStarted)return;audioStarted=true;SND.bgm.play().catch(()=>{});}
 function playS(name){if(!audioStarted)return;const s=SND[name];if(!s)return;const c=s.cloneNode();c.volume=name==='fire'?volSFX*0.5:volSFX;c.play().catch(()=>{});if(name==='fire')fireAudio=c;return c;}
