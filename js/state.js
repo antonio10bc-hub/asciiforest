@@ -1,0 +1,181 @@
+const C=document.getElementById('game'),X=C.getContext('2d');
+// Assigning ctx.font re-parses the shorthand, and the draw loops flip between
+// sizes hundreds of times a frame. setFont() skips the no-op writes; ctx.restore()
+// rolls the real font back, so every restore must clear the shadow copy.
+let _font='';
+const _fontCache={};
+function fontPx(sz){return _fontCache[sz]||(_fontCache[sz]=sz+"px 'VT323',monospace");}
+function setFont(f){if(f!==_font){_font=f;X.font=f;}}
+function resetFontState(){_font='';}
+const T=20,GW=60,GH=60,MW=GW*T,MH=GH*T,CX=30,CY=30;
+const AR=5,SCD=3000,MRB=2,MBB=3,MT=100,MTS=2,MAX_SEEDS=3,MAX_BV=3,MAX_FROGS=5,MAX_REEDS=20,MAX_FLOWERS=30,MAX_BEES=6,MAX_DEER=10;
+let gS=1,cam={x:0,y:0,z:2.5},isPan=false,panS={x:0,y:0},camS={x:0,y:0};
+let grid=[],seeds=[],bushes=[],trees=[],tSP=[],rB=[],bB=[],beavers=[];
+let river=new Set(),riverDone=false,riverDoneT=0,reeds=[],frogs=[];
+let flowers=[],bees=[];
+let deers=[],deerPhase='waiting',deerSpawnT=10,deerNextT=0,herdLeader=null;
+let altarSeed=false,aCD=0,sel=null,particles=[];
+let disc={},discQ=[],discT=0,aT=0,tt=0;
+let gamePaused=false,prevSpeed=1,gameOver=false,dayCount=0,hasLostOnce=false;
+// Tutorial bubbles (show once)
+let tutStep=0,tutPos=null;
+// Tap-to-name tooltip
+let tapLabel=null;// {text,wx,wy,timer}
+let rPaths=[],rI=[],rGT=0;
+let galPage='tasks',galOpen=false,totalSP=0;
+let ctaTarget=null,ctaTimer=0,lastPA=0;const CTA_IDLE=5;
+// lastPA is also reset when a CTA fires, so idle hints need their own clock:
+// this one only goes back to zero on a real gesture from the player.
+let idleSince=0;
+let touchId=null,touchStart=null,touchMoved=false,pinchDist=null,touchConsumed=false;
+let reedST=0,reedSD=false,taskBT=0,flowerST=3+Math.random()*7;
+let flickerT=0,flickerA=1;
+// === FIRE SYSTEM ===
+let fireTiles=new Set(),firePhase='waiting',fireTimer=30,fireHP=3,fireGrowT=0,fireGrowRate=2.5,fireCenter={x:0,y:0};
+let fireRecurT=0;// cooldown for recurring fires
+let burnedTiles={};// key:'x,y' → timer remaining
+let burnedDecayT=0;// batches the burned-ground countdown
+let hasWater=false;
+
+// === AUDIO SYSTEM ===
+const SND={
+  bgm:new Audio('Sounds/bgmusic.wav'),
+  fire:new Audio('Sounds/firesound.wav'),
+  mission:new Audio('Sounds/missioncompletedsound.wav'),
+  tap:new Audio('Sounds/tapsound.wav'),
+};
+let volMusic=0.5,volSFX=0.5,audioStarted=false,fireAudio=null;
+SND.bgm.loop=true;SND.bgm.volume=volMusic*0.5;
+function initAudio(){if(audioStarted)return;audioStarted=true;SND.bgm.play().catch(()=>{});}
+function playS(name){if(!audioStarted)return;const s=SND[name];if(!s)return;const c=s.cloneNode();c.volume=name==='fire'?volSFX*0.5:volSFX;c.play().catch(()=>{});if(name==='fire')fireAudio=c;return c;}
+function fadeFireSound(){if(!fireAudio)return;const a=fireAudio;const fade=setInterval(()=>{if(a.volume>0.02){a.volume=Math.max(0,a.volume-0.05);}else{a.pause();clearInterval(fade);}},50);fireAudio=null;}
+function updVol(){SND.bgm.volume=volMusic*0.5;}
+const FC=['#ff4060','#ff8830','#ff30c0','#f0e030','#30e8ff','#c060ff','#ff6030','#30ffa0'];
+// Symbol & color definitions
+const SYM={
+  grass:['.','.',',',',','\'','`',' ',' ',' '],
+  altar:['░','▒','▓'],
+  altarCenter:'◆',
+  altarSeed:'✦',
+  seed:'°',
+  bushSprout:'♣',
+  bush:'♣',
+  treeSeed:'◇',
+  treeSprout:'†',
+  tree:'♠',
+  treeWithSeed:'♠',
+  river:['~','≈','~','∽'],
+  reedSprout:'¦',
+  reed:'¶',
+  flower:'✿',
+  redBird:'♦',
+  blueBird:'♦',
+  beaver:'Θ',
+  frog:'Φ',
+  bee:'∞',
+  deerAdult:'Ω',
+  deerBaby:'ω',
+  fire:['▲','♦','▴','*'],
+  burned:'░',
+  waterDrop:'≋',
+  particle:'·',
+};
+const COL={
+  bgDark:'#020802',
+  grassDim:'#0a3a0a',
+  grassMid:'#1a5a1a',
+  grassBright:'#30aa30',
+  altarDim:'#303050',
+  altarMid:'#5050a0',
+  altarBright:'#8888ff',
+  altarGlow:'#aaaaff',
+  seedGold:'#ffdd30',
+  seedGlow:'#ffaa00',
+  tSeedCyan:'#30ddff',
+  bushDim:'#208020',
+  bushBright:'#40e040',
+  treeDim:'#0a5020',
+  treeBright:'#18803a',
+  treeGlow:'#10602a',
+  riverBlue:'#3088e0',
+  riverCyan:'#50c8ff',
+  riverDim:'#204880',
+  reedGreen:'#40a040',
+  reedBright:'#60e060',
+  redBird:'#ff3030',
+  blueBird:'#3080ff',
+  beaverAmber:'#e0a020',
+  frogGreen:'#30ff30',
+  flowerPink:'#ff5088',
+  beeYellow:'#ffe030',
+  deerAmber:'#cc8840',
+  deerBabyCol:'#eebb70',
+  fireRed:'#ff2010',
+  fireOrange:'#ff8020',
+  fireYellow:'#ffcc10',
+  fireGlow:'#ff4020',
+  burnedDark:'#1a0a04',
+  burnedMid:'#302010',
+  waterBlue:'#40c0ff',
+  highlight:'#50ff50',
+  white:'#e0ffe0',
+  dim:'#0a2a0a',
+};
+
+const GAL={plants:[
+{key:'seed',name:'SEED',sym:SYM.seed,col:COL.seedGold,prog:null},
+{key:'bushSprout',name:'SPROUT',sym:SYM.bushSprout,col:COL.bushDim,prog:null},
+{key:'bush',name:'BUSH',sym:SYM.bush,col:COL.bushBright,prog:{current:()=>cntB(),max:3}},
+{key:'treeSeed',name:'TREE SEED',sym:SYM.treeSeed,col:COL.tSeedCyan,prog:null},
+{key:'treeSprout',name:'SAPLING',sym:SYM.treeSprout,col:COL.treeDim,prog:null},
+{key:'tree',name:'TREE',sym:SYM.tree,col:COL.treeBright,prog:{current:()=>cntT(),max:6}},
+{key:'river',name:'RIVER',sym:'≈',col:COL.riverCyan,prog:null},
+{key:'reed',name:'REED',sym:SYM.reed,col:COL.reedBright,prog:null},
+{key:'flower',name:'FLOWER',sym:SYM.flower,col:COL.flowerPink,prog:{current:()=>flowers.length,max:MAX_FLOWERS}},
+],animals:[
+{key:'redBird',name:'RED BIRD',sym:SYM.redBird,col:COL.redBird,prog:{current:()=>rB.length,max:MRB}},
+{key:'blueBird',name:'BLUE BIRD',sym:SYM.blueBird,col:COL.blueBird,prog:{current:()=>bB.length,max:MBB}},
+{key:'beaver',name:'BEAVER',sym:SYM.beaver,col:COL.beaverAmber,prog:{current:()=>beavers.length,max:MAX_BV}},
+{key:'frog',name:'FROG',sym:SYM.frog,col:COL.frogGreen,prog:{current:()=>frogs.length,max:MAX_FROGS}},
+{key:'bee',name:'BEE',sym:SYM.bee,col:COL.beeYellow,prog:{current:()=>bees.length,max:MAX_BEES}},
+{key:'deer',name:'DEER',sym:SYM.deerAdult,col:COL.deerAmber,prog:{current:()=>cntDeer(),max:MAX_DEER}},
+]};
+const TASKS=[
+{id:'plant3',text:'Plant 3 seeds in the ground',check:()=>totalSP>=3},
+{id:'bush10',text:'Grow 3 bushes',check:()=>cntB()>=3},
+{id:'tree1',text:'Grow your first tree',check:()=>cntT()>=1},
+{id:'tree20',text:'Fill the forest with 6 trees',check:()=>cntT()>=6},
+{id:'chop1',text:'Transform the landscape',check:()=>disc['river']===true},
+{id:'reed1',text:'Clear the aquatic vegetation',check:()=>disc['reedCleared']===true},
+{id:'frog1',text:'Find a hidden creature',check:()=>disc['frog']===true},
+{id:'flower1',text:'Discover something that blooms',check:()=>disc['flower']===true},
+{id:'bee1',text:'Attract a pollinator',check:()=>disc['bee']===true},
+{id:'deer1',text:'Gather the herd',check:()=>cntDeer()>=MAX_DEER},
+{id:'fire1',text:'Extinguish the wildfire',check:()=>disc['fireOut']===true},
+];
+let tasksDone=new Set();
+for(let y=0;y<GH;y++){grid[y]=[];for(let x=0;x<GW;x++)grid[y][x]='empty';}
+for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(Math.abs(dx)+Math.abs(dy)<=3)grid[CY+dy][CX+dx]='altar';
+function resize(){C.width=innerWidth;C.height=innerHeight;resetFontState();}
+addEventListener('resize',resize);resize();
+
+// Noise
+const gV=[],gD=[];
+for(let y=0;y<GH;y++){gV[y]=[];gD[y]=[];for(let x=0;x<GW;x++){gV[y][x]=Math.random();gD[y][x]=Math.random();}}
+
+
+// Grass is derived from gV/gD, which never change — bake the glyph and a
+// quantised colour bucket once so render() only does array reads, and so the
+// terrain pass can set fillStyle GRASS_STEPS times instead of once per tile.
+const GRASS_STEPS=24,GRASS_COLS=[],gCh=new Array(GW*GH),gCI=new Uint8Array(GW*GH),gBuf=[];
+for(let i=0;i<GRASS_STEPS;i++){GRASS_COLS.push(`rgba(48,170,48,${(0.2+i*(0.2/(GRASS_STEPS-1))).toFixed(4)})`);gBuf.push([]);}
+for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
+  const i=y*GW+x,v=gV[y][x],d=gD[y][x],ch=SYM.grass[Math.floor(v*SYM.grass.length)];
+  gCh[i]=ch===' '?null:ch;
+  gCI[i]=Math.min(GRASS_STEPS-1,Math.round((v*0.15+d*0.05)/0.2*(GRASS_STEPS-1)));
+}
+
+// Cached DOM handles — these nodes are read or written every frame.
+const EL={};
+for(const id of['discovery-banner','task-bubble','day-counter','clock-canvas','gallery-badge','settings-badge','border-flash','pause-btn','gallery-modal','gallery-content','debug-panel','settings-panel','hint-strip','hint-text'])EL[id]=document.getElementById(id);
+const clockCtx=EL['clock-canvas']?EL['clock-canvas'].getContext('2d'):null;
