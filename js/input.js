@@ -72,7 +72,7 @@ C.addEventListener('wheel',(e)=>{e.preventDefault();noteInput();const zf=e.delta
 C.addEventListener('touchstart',(e)=>{if(e.touches.length===2){const t1=e.touches[0],t2=e.touches[1];pinchDist=Math.hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY);camS={x:cam.x,y:cam.y};return;}if(e.touches.length===1){const t=e.touches[0];touchId=t.identifier;touchStart={x:t.clientX,y:t.clientY};touchMoved=false;camS={x:cam.x,y:cam.y};}},{passive:true});
 C.addEventListener('touchmove',(e)=>{noteInput();if(e.touches.length===2&&pinchDist!==null){const t1=e.touches[0],t2=e.touches[1];const nd=Math.hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY);const oz=cam.z;cam.z=Math.max(0.5,Math.min(6,oz*(nd/pinchDist)));const mx2=(t1.clientX+t2.clientX)/2,my2=(t1.clientY+t2.clientY)/2;cam.x=mx2/oz+camS.x-mx2/cam.z;cam.y=my2/oz+camS.y-my2/cam.z;pinchDist=nd;return;}if(e.touches.length===1&&touchStart){const t=e.touches[0];const dx=t.clientX-touchStart.x,dy=t.clientY-touchStart.y;if(Math.abs(dx)>8||Math.abs(dy)>8)touchMoved=true;if(touchMoved){cam.x=camS.x-dx/cam.z;cam.y=camS.y-dy/cam.z;}}},{passive:true});
 C.addEventListener('touchend',(e)=>{if(e.touches.length<2)pinchDist=null;if(e.changedTouches.length===1){const t=e.changedTouches[0];if(t.identifier===touchId&&!touchMoved){handleTap(t.clientX,t.clientY);touchConsumed=true;}touchId=null;touchStart=null;touchMoved=false;}},{passive:true});
-document.querySelectorAll('.speed-btn').forEach(b=>{b.addEventListener('click',()=>{gS=parseInt(b.dataset.speed);document.querySelectorAll('.speed-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');});});
+document.querySelectorAll('.speed-btn').forEach(b=>b.addEventListener('click',()=>setSpeed(parseInt(b.dataset.speed))));
 
 // Keyboard speed: Q=x1, W=x2, E=x5, R=x10
 const SPEED_KEYS={q:1,w:2,e:5,r:10};
@@ -80,6 +80,6 @@ document.addEventListener('keydown',(e)=>{
   if(e.key.toLowerCase()==='p'){togglePause();return;}
   if(gameOver||gamePaused)return;
   const sp=SPEED_KEYS[e.key.toLowerCase()];
-  if(sp!==undefined){gS=sp;prevSpeed=sp;document.querySelectorAll('.speed-btn').forEach(b=>{b.classList.toggle('active',parseInt(b.dataset.speed)===sp);});}
+  if(sp!==undefined)setSpeed(sp);
 });
 

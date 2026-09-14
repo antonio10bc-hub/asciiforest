@@ -1,16 +1,9 @@
 // === DEBUG PANEL ===
 let dbgOpen=false;
-document.getElementById('debug-btn').addEventListener('click',()=>{dbgOpen=!dbgOpen;const p=document.getElementById('debug-panel');p.classList.toggle('open',dbgOpen);if(dbgOpen)renderDbg();});
-// Settings panel
-let stgOpen=false;
-document.getElementById('settings-btn').addEventListener('click',()=>{stgOpen=!stgOpen;document.getElementById('settings-panel').classList.toggle('open',stgOpen);if(stgOpen)document.getElementById('settings-badge').classList.remove('show');});
-document.getElementById('vol-music').addEventListener('input',(e)=>{volMusic=e.target.value/100;updVol();});
-document.getElementById('vol-sfx').addEventListener('input',(e)=>{volSFX=e.target.value/100;});
-document.getElementById('pause-btn').addEventListener('click',()=>{initAudio();togglePause();});
-document.getElementById('go-restart').addEventListener('click',restartGame);
+EL['debug-btn'].addEventListener('click',()=>{dbgOpen=!dbgOpen;EL['debug-panel'].classList.toggle('open',dbgOpen);if(dbgOpen)renderDbg();});
 function renderDbg(){
-  const p=document.getElementById('debug-panel');
-  const curSpd=gS;
+  const p=EL['debug-panel'];
+  const curSpd=spdMult;
   p.innerHTML=`<div class="dbg-title">┌─ DEBUG CONSOLE ─┐</div>
 <div style="margin-bottom:8px;display:flex;gap:4px;">
 <button class="dbg-speed-btn ${curSpd===1?'active':''}" data-speed="1">[Q:x1]</button>
@@ -33,7 +26,7 @@ function renderDbg(){
 <button class="dbg-btn" data-dbg="all">>> UNLOCK ALL <<<</button>
 <button class="dbg-btn" data-dbg="lose">>> LOSE GAME <<<</button>`;
   p.querySelectorAll('.dbg-btn').forEach(b=>b.addEventListener('click',()=>runDbg(b.dataset.dbg)));
-  p.querySelectorAll('.dbg-speed-btn').forEach(b=>b.addEventListener('click',()=>{gS=parseInt(b.dataset.speed);prevSpeed=gS;p.querySelectorAll('.dbg-speed-btn').forEach(x=>x.classList.toggle('active',parseInt(x.dataset.speed)===gS));document.querySelectorAll('#speed-control .speed-btn').forEach(x=>x.classList.toggle('active',parseInt(x.dataset.speed)===gS));}));
+  p.querySelectorAll('.dbg-speed-btn').forEach(b=>b.addEventListener('click',()=>setSpeed(parseInt(b.dataset.speed))));
 }
 function dbgSpot(){for(let i=0;i<200;i++){const a=Math.random()*Math.PI*2,d=AR+3+Math.random()*20;const gx=Math.floor(CX+Math.cos(a)*d),gy=Math.floor(CY+Math.sin(a)*d);if(gx>=1&&gx<GW-1&&gy>=1&&gy<GH-1&&!isOccNR(gx,gy)&&!nearA(gx,gy,AR))return{x:gx,y:gy};}return null;}
 function runDbg(cmd){

@@ -23,5 +23,5 @@ function loop(now){const dt=Math.min((now-lastT)/1000,0.1);lastT=now;update(dt);
   // race ahead at x10.
   idleSince+=dt;updHints(dt);
   requestAnimationFrame(loop);}
-cam.x=CX*T-C.width/(2*cam.z);cam.y=CY*T-C.height/(2*cam.z);
+cam.x=CX*T-VW/(2*cam.z);cam.y=CY*T-VH/(2*cam.z);
 requestAnimationFrame(loop);

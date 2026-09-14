@@ -9,14 +9,19 @@ function setFont(f){if(f!==_font){_font=f;X.font=f;}}
 function resetFontState(){_font='';}
 const T=20,GW=60,GH=60,MW=GW*T,MH=GH*T,CX=30,CY=30;
 const AR=5,SCD=3000,MRB=2,MBB=3,MT=100,MTS=2,MAX_SEEDS=3,MAX_BV=3,MAX_FROGS=5,MAX_REEDS=20,MAX_FLOWERS=30,MAX_BEES=6,MAX_DEER=10;
-let gS=1,cam={x:0,y:0,z:2.5},isPan=false,panS={x:0,y:0},camS={x:0,y:0};
+let DPR=1,VW=0,VH=0;// device pixel ratio and viewport size in CSS px
+// The nominal x1 runs a touch quicker than real time; the speed buttons are
+// multipliers on top of it, so x1 stays the labelled baseline.
+const BASE_SPEED=1.25;
+let spdMult=1;// which of SPEED_STEPS the player picked
+let gS=BASE_SPEED,cam={x:0,y:0,z:2.5},isPan=false,panS={x:0,y:0},camS={x:0,y:0};
 let grid=[],seeds=[],bushes=[],trees=[],tSP=[],rB=[],bB=[],beavers=[];
 let river=new Set(),riverDone=false,riverDoneT=0,reeds=[],frogs=[];
 let flowers=[],bees=[];
 let deers=[],deerPhase='waiting',deerSpawnT=10,deerNextT=0,herdLeader=null;
 let altarSeed=false,aCD=0,sel=null,particles=[];
 let disc={},discQ=[],discT=0,aT=0,tt=0;
-let gamePaused=false,prevSpeed=1,gameOver=false,dayCount=0,hasLostOnce=false;
+let gamePaused=false,prevSpeed=BASE_SPEED,gameOver=false,dayCount=0,hasLostOnce=false;
 // Tutorial bubbles (show once)
 let tutStep=0,tutPos=null;
 // Tap-to-name tooltip
@@ -44,7 +49,7 @@ const SND={
   mission:new Audio('Sounds/missioncompletedsound.wav'),
   tap:new Audio('Sounds/tapsound.wav'),
 };
-let volMusic=0.5,volSFX=0.5,audioStarted=false,fireAudio=null;
+let volMusic=0.25,volSFX=0.5,audioStarted=false,fireAudio=null;
 SND.bgm.loop=true;SND.bgm.volume=volMusic*0.5;
 function initAudio(){if(audioStarted)return;audioStarted=true;SND.bgm.play().catch(()=>{});}
 function playS(name){if(!audioStarted)return;const s=SND[name];if(!s)return;const c=s.cloneNode();c.volume=name==='fire'?volSFX*0.5:volSFX;c.play().catch(()=>{});if(name==='fire')fireAudio=c;return c;}
@@ -156,7 +161,16 @@ const TASKS=[
 let tasksDone=new Set();
 for(let y=0;y<GH;y++){grid[y]=[];for(let x=0;x<GW;x++)grid[y][x]='empty';}
 for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(Math.abs(dx)+Math.abs(dy)<=3)grid[CY+dy][CX+dx]='altar';
-function resize(){C.width=innerWidth;C.height=innerHeight;resetFontState();}
+// The canvas backing store follows the display density (capped at 2x so a 3x
+// phone does not pay for 9x the pixels); every drawing coordinate in the game
+// stays in CSS pixels because render() installs DPR as the base transform.
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  VW=innerWidth;VH=innerHeight;
+  C.width=Math.round(VW*DPR);C.height=Math.round(VH*DPR);
+  C.style.width=VW+'px';C.style.height=VH+'px';
+  resetFontState();
+}
 addEventListener('resize',resize);resize();
 
 // Noise
@@ -177,5 +191,5 @@ for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
 
 // Cached DOM handles — these nodes are read or written every frame.
 const EL={};
-for(const id of['discovery-banner','task-bubble','day-counter','clock-canvas','gallery-badge','settings-badge','border-flash','pause-btn','gallery-modal','gallery-content','debug-panel','settings-panel','hint-strip','hint-text'])EL[id]=document.getElementById(id);
+for(const id of['discovery-banner','task-bubble','day-counter','clock-canvas','gallery-badge','settings-badge','border-flash','pause-btn','gallery-modal','gallery-content','debug-panel','settings-panel','hint-strip','hint-text','gallery-btn','settings-btn','debug-btn','gameover-overlay'])EL[id]=document.getElementById(id);
 const clockCtx=EL['clock-canvas']?EL['clock-canvas'].getContext('2d'):null;

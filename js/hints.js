@@ -32,7 +32,7 @@ function hintLines(){
 
 let hintT=0,hintI=0,hintOn=false,hintPulse=false,hintMsg='';
 function updHints(dt){
-  const strip=EL['hint-strip'],btn=document.getElementById('gallery-btn');
+  const strip=EL['hint-strip'],btn=EL['gallery-btn'];
   if(!strip||!btn)return;
   const idle=!gameOver&&!galOpen&&inEarlyTasks()&&idleSince>=HINT_IDLE;
   // The scripted tutorial owns the screen while it is up. Its last step already
@@ -58,7 +58,7 @@ function updHints(dt){
 }
 function resetHints(){
   hintT=0;hintI=0;hintOn=false;hintPulse=false;hintMsg='';
-  const strip=EL['hint-strip'],btn=document.getElementById('gallery-btn');
+  const strip=EL['hint-strip'],btn=EL['gallery-btn'];
   if(strip){strip.classList.remove('show');EL['hint-text'].textContent='';}
   if(btn)btn.classList.remove('idle-cta');
 }

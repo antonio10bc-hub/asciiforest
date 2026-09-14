@@ -2,7 +2,8 @@
 const FIRE_COLS=[COL.fireRed,COL.fireOrange,COL.fireYellow];
 const entBuf=[];
 function render(){
-const W=C.width,H=C.height;
+const W=VW,H=VH;
+X.setTransform(DPR,0,0,DPR,0,0);// base transform: everything below is CSS px
 X.fillStyle='#020802';X.fillRect(0,0,W,H);
 X.globalAlpha=flickerA;
 X.save();X.translate(-cam.x*cam.z,-cam.y*cam.z);X.scale(cam.z,cam.z);
@@ -144,17 +145,17 @@ for(const a of all){
 drawCTA();drawP();drawTapLabel();drawTut();
 // Water carry indicator (screen-space)
 // Selection / Water HUD indicator
-{X.save();X.setTransform(1,0,0,1,0,0);setFont("28px 'VT323',monospace");X.textAlign='center';X.textBaseline='middle';
+{X.save();X.setTransform(DPR,0,0,DPR,0,0);setFont("28px 'VT323',monospace");X.textAlign='center';X.textBaseline='middle';
 let hudText=null,hudCol=null,hudGlow=null;
 if(hasWater){hudText='≋ WATER ≋';hudCol='rgba(64,192,255,';hudGlow=COL.waterBlue;}
 else if(sel){
   const labels={aS:['✦ SEED ✦','rgba(210,170,60,',COL.seedGold],tS:['◇ TREE SEED ◇','rgba(80,220,210,',COL.tSeedCyan],beaver:['◈ BEAVER ◈','rgba(180,120,50,',COL.beaverAmber],flower:['✿ FLOWER ✿','rgba(255,100,160,',COL.flowerPink],redBird:['♪ RED BIRD ♪','rgba(200,60,40,',COL.redBird],blueBird:['♪ BLUE BIRD ♪','rgba(80,140,220,',COL.blueBird],deer:['Ω DEER Ω','rgba(204,136,64,',COL.deerAmber],herd:['Ω HERD Ω','rgba(204,136,64,',COL.deerAmber]};
   const l=labels[sel.type];if(l){hudText=l[0];hudCol=l[1];hudGlow=l[2];}
 }
-if(hudText){const ha=0.6+Math.sin(tt*5)*0.3;X.shadowColor=hudGlow;X.shadowBlur=12;X.fillStyle=hudCol+ha+')';X.fillText(hudText,C.width/2,C.height-30);X.shadowBlur=0;}
+if(hudText){const ha=0.6+Math.sin(tt*5)*0.3;X.shadowColor=hudGlow;X.shadowBlur=12;X.fillStyle=hudCol+ha+')';X.fillText(hudText,W/2,H-30);X.shadowBlur=0;}
 X.restore();resetFontState();}
 // Fire HP indicator
-if(firePhase==='active'&&!gameOver){X.save();X.setTransform(1,0,0,1,0,0);const fa=0.7+Math.sin(tt*4)*0.2;X.shadowColor=COL.fireGlow;X.shadowBlur=8;X.fillStyle=`rgba(255,80,32,${fa})`;setFont("22px 'VT323',monospace");X.textAlign='center';X.textBaseline='middle';const hpStr='FIRE '+'▲'.repeat(fireHP)+'·'.repeat(3-fireHP);X.fillText(hpStr,C.width/2,30);X.shadowBlur=0;X.restore();resetFontState();}
+if(firePhase==='active'&&!gameOver){X.save();X.setTransform(DPR,0,0,DPR,0,0);const fa=0.7+Math.sin(tt*4)*0.2;X.shadowColor=COL.fireGlow;X.shadowBlur=8;X.fillStyle=`rgba(255,80,32,${fa})`;setFont("22px 'VT323',monospace");X.textAlign='center';X.textBaseline='middle';const hpStr='FIRE '+'▲'.repeat(fireHP)+'·'.repeat(3-fireHP);X.fillText(hpStr,W/2,30);X.shadowBlur=0;X.restore();resetFontState();}
 // Warm phosphor overlay
 X.fillStyle='rgba(30,50,20,0.02)';X.fillRect(cam.x,cam.y,W/cam.z,H/cam.z);
 // Day/night cycle overlay synced with clock

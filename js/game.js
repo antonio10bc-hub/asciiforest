@@ -14,6 +14,12 @@ function updDay(){
     lastClockStep=step;
     const cx2=clockCtx;
     const cw=52,ch=56;
+    const cc=EL['clock-canvas'];
+    if(cc.width!==Math.round(cw*DPR)){// first draw, or the window moved to another display
+      cc.width=Math.round(cw*DPR);cc.height=Math.round(ch*DPR);
+      cc.style.width=cw+'px';cc.style.height=ch+'px';
+    }
+    cx2.setTransform(DPR,0,0,DPR,0,0);
     cx2.clearRect(0,0,cw,ch);
     cx2.fillStyle='rgba(0,4,0,0.5)';cx2.fillRect(0,0,cw,ch);
     cx2.strokeStyle='rgba(255,255,255,0.45)';cx2.lineWidth=1;cx2.strokeRect(0,0,cw,ch);
@@ -40,11 +46,26 @@ function updDay(){
   const want=tasksDone.size>badgeSeenCount&&!galOpen;
   if(want!==lastBadge){lastBadge=want;if(EL['gallery-badge'])EL['gallery-badge'].classList.toggle('show',want);}
 }
+// One way in and out of the speed state. Every control — settings, debug panel,
+// keyboard — goes through setSpeed() so the active markers can never drift apart,
+// and so pausing is the only thing that ever writes gS directly.
+function setSpeed(mult){
+  spdMult=mult;prevSpeed=mult*BASE_SPEED;
+  if(!gamePaused&&!gameOver)gS=prevSpeed;
+  syncSpeedUI();
+}
+function syncSpeedUI(){
+  document.querySelectorAll('[data-speed]').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.speed)===spdMult));
+}
 function togglePause(){
   if(gameOver)return;
   gamePaused=!gamePaused;
-  if(gamePaused){prevSpeed=gS;gS=0;document.getElementById('pause-btn').textContent='▶';}
-  else{gS=prevSpeed||1;document.getElementById('pause-btn').textContent='||';}
+  if(gamePaused){prevSpeed=gS;gS=0;}
+  else gS=prevSpeed||BASE_SPEED;
+  const b=EL['pause-btn'];
+  b.textContent=gamePaused?'▶':'||';
+  b.classList.toggle('paused',gamePaused);
+  b.setAttribute('aria-label',gamePaused?'Resume':'Pause');
 }
 function triggerGameOver(){
   gameOver=true;gS=0;hasLostOnce=true;resetHints();
@@ -55,11 +76,11 @@ function triggerGameOver(){
   rB.length=0;bB.length=0;beavers.length=0;frogs.length=0;bees.length=0;deers.length=0;
   // Show overlay
   document.querySelector('#gameover-overlay .go-days').textContent='DAY '+dayCount;
-  document.getElementById('gameover-overlay').classList.add('show');
+  EL['gameover-overlay'].classList.add('show');
 }
 function restartGame(){
   // Reset all state
-  gameOver=false;gamePaused=false;gS=1;prevSpeed=1;tt=0;dayCount=0;aT=0;
+  gameOver=false;gamePaused=false;spdMult=1;gS=BASE_SPEED;prevSpeed=BASE_SPEED;tt=0;dayCount=0;aT=0;
   grid=[];seeds=[];bushes=[];trees=[];tSP=[];rB=[];bB=[];beavers=[];
   river=new Set();riverDone=false;riverDoneT=0;reeds=[];frogs=[];
   flowers=[];bees=[];deers=[];deerPhase='waiting';deerSpawnT=10;deerNextT=0;herdLeader=null;
@@ -79,48 +100,46 @@ function restartGame(){
   for(let y=0;y<GH;y++){grid[y]=[];for(let x=0;x<GW;x++)grid[y][x]='empty';}
   for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(Math.abs(dx)+Math.abs(dy)<=3)grid[CY+dy][CX+dx]='altar';
   // Reset UI
-  document.getElementById('gameover-overlay').classList.remove('show');
-  document.getElementById('pause-btn').textContent='||';
-  document.getElementById('day-counter').textContent='DAY 1';
-  document.getElementById('gallery-badge').classList.remove('show');
+  EL['gameover-overlay'].classList.remove('show');
+  EL['pause-btn'].textContent='||';EL['pause-btn'].classList.remove('paused');EL['pause-btn'].setAttribute('aria-label','Pause');
+  EL['day-counter'].textContent='DAY 1';
+  EL['gallery-badge'].classList.remove('show');
   closeGal();
   // Restart music
   SND.bgm.volume=volMusic*0.5;
   SND.bgm.currentTime=0;
   if(audioStarted)SND.bgm.play().catch(()=>{});
-  cam.x=CX*T-C.width/(2*cam.z);cam.y=CY*T-C.height/(2*cam.z);
-  // Show speed controls in settings after first death
+  cam.x=CX*T-VW/(2*cam.z);cam.y=CY*T-VH/(2*cam.z);
+  // Show speed controls in settings after first death (the buttons themselves are
+  // wired once at load, in input.js).
   if(hasLostOnce){
     document.getElementById('stg-speed').style.display='block';
-    document.getElementById('settings-badge').classList.add('show');
-    document.querySelectorAll('.stg-spd').forEach(b=>{
-      b.classList.toggle('active',parseInt(b.dataset.speed)===1);
-      b.onclick=()=>{gS=parseInt(b.dataset.speed);prevSpeed=gS;
-        document.querySelectorAll('.stg-spd').forEach(x=>x.classList.toggle('active',parseInt(x.dataset.speed)===gS));};
-    });
+    EL['settings-badge'].classList.add('show');
   }
+  syncSpeedUI();
 }
 
 // === TUTORIAL BUBBLES ===
 function updTut(dt){
-  if(hasLostOnce)return;
-  // Step 0: "Take a seed" - show when altar has seed, dismiss when player picks it
+  if(hasLostOnce){tutPos=null;return;}
+  // Advance the step first...
+  if(tutStep===0&&sel&&sel.type==='aS')tutStep=1;
+  if(tutStep===1&&totalSP>=1&&!sel)tutStep=2;
+  if(tutStep===2&&galOpen)tutStep=3;
+  // ...then derive the bubble from the step we ended up in. Nothing matching
+  // means no bubble, which is what keeps it from sticking around.
+  tutPos=null;
   if(tutStep===0&&altarSeed&&totalSP===0&&!sel){
+    // Step 0: "Take a seed"
     tutPos={text:'Take a seed',wx:CX*T+T/2,wy:CY*T-14,type:'world'};
-  }
-  if(tutStep===0&&sel&&sel.type==='aS'){tutStep=1;tutPos=null;}
-  // Step 1: "Plant the seed" - show while holding seed, dismiss when planted
-  if(tutStep===1&&sel&&sel.type==='aS'){
-    const a=2.5,d=AR+4;// fixed direction for consistency
-    const px=(CX+Math.cos(a)*d)*T+T/2,py=(CY+Math.sin(a)*d)*T+T/2;
-    tutPos={text:'Plant the seed',wx:px,wy:py-10,type:'world'};
-  }
-  if(tutStep===1&&totalSP>=1&&!sel){tutStep=2;tutPos=null;}
-  // Step 2: "Check your current task" - show after planting, dismiss when gallery opened
-  if(tutStep===2&&totalSP>=1&&!sel&&!galOpen){
+  }else if(tutStep===1&&sel&&sel.type==='aS'){
+    // Step 1: "Plant the seed" — same spot the idle CTA points at
+    const p=ctaPlantSpot();
+    tutPos={text:'Plant the seed',wx:p.x,wy:p.y-10,type:'world'};
+  }else if(tutStep===2&&totalSP>=1&&!sel&&!galOpen){
+    // Step 2: "Check your current task"
     tutPos={text:'Check your current task',type:'screenRight'};
   }
-  if(tutStep===2&&galOpen){tutStep=3;tutPos=null;}
 }
 function drawTut(){
   if(!tutPos)return;
@@ -141,11 +160,11 @@ function drawTut(){
     X.fillText(tutPos.text,wx,wy-4);X.shadowBlur=0;
   } else if(tutPos.type==='screenRight'){
     // Draw to the RIGHT of gallery button (bottom:10,left:10,88x76) → left edge at 108px
-    X.save();X.setTransform(1,0,0,1,0,0);
+    X.save();X.setTransform(DPR,0,0,DPR,0,0);
     setFont("14px 'VT323',monospace");X.textAlign='left';X.textBaseline='middle';
     const tm=X.measureText(tutPos.text);
     const bw=tm.width+16,bh=26;
-    const bx=108,by=C.height-48-bh/2;// vertically center with gallery btn
+    const bx=108,by=VH-48-bh/2;// vertically center with gallery btn
     X.fillStyle=`rgba(20,20,20,0.85)`;X.fillRect(bx,by,bw,bh);
     X.strokeStyle=`rgba(255,255,255,0.5)`;X.lineWidth=1;X.strokeRect(bx,by,bw,bh);
     // Triangle pointing LEFT toward button
@@ -170,7 +189,10 @@ function drawTapLabel(){
 }
 
 // === FLICKER ===
-function updFlicker(dt){flickerT-=dt;if(flickerT<=0){flickerT=3+Math.random()*12;flickerA=0.85+Math.random()*0.1;setTimeout(()=>{flickerA=1;},40+Math.random()*80);}}
+// Mirrors the prefers-reduced-motion block in the stylesheet: the flicker is
+// drawn in canvas, so CSS cannot switch it off.
+const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function updFlicker(dt){if(reduceMotion){flickerA=1;return;}flickerT-=dt;if(flickerT<=0){flickerT=3+Math.random()*12;flickerA=0.85+Math.random()*0.1;setTimeout(()=>{flickerA=1;},40+Math.random()*80);}}
 
 function update(dt){if(gameOver)return;const s=dt*gS;tt+=s;updDay();updAltar(s);updBushes(s);updTrees(s);updRiver(s);updReeds(s);updFlowers(s);updFire(s);updP(s);updateCTA(s);updTB(s);updFlicker(s);updDeer(s);updTut(s);updTapLabel(s);for(const b of rB)updRBi(b,s);for(const b of bB)updBBi(b,s);for(const b of beavers)updBVi(b,s);for(const f of frogs)updFrg(f,s);for(const b of bees)updBeeI(b,s);chkSpawn();updD(s);aT+=s;updTasks();}
 

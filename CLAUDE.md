@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `js/game.js` | day clock, pause, game over, `restartGame`, tutorial bubbles, tap labels, flicker, `update()` |
 | `js/hints.js` | the idle call-to-action layer for the first two tasks |
 | `js/render.js` | `render()` and its highlight helpers |
-| `js/ui.js` | the gallery/log modal |
+| `js/ui.js` | the gallery/log modal, the settings panel, pause/restart wiring, and keyboard affordances (Enter/Space on `role="button"` nodes, Esc to close) |
 | `js/input.js` | `handleTap` and every pointer, touch and keyboard listener |
 | `js/debug.js` | the debug panel |
 | `js/main.js` | game-over flames and `loop()` |
@@ -35,12 +35,19 @@ Serve over HTTP rather than opening the file directly — `file://` breaks the `
 In-game dev affordances:
 - **Debug panel** — red `[DEBUG]` button, bottom-right. Buttons jump the simulation to any progression stage (`renderDbg()` builds them, `runDbg(cmd)` executes, both in `js/debug.js`); `UNLOCK ALL` fast-forwards everything; `LOSE GAME` triggers the fire game-over.
 - **Speed** — keys `Q`/`W`/`E`/`R` = ×1/×2/×5/×10, `P` = pause. The in-settings speed control stays hidden until the player has lost once (`hasLostOnce`).
+- **Esc** closes the log, then the settings panel.
 
 ## Architecture
 
 ### Loop
 
-`loop()` (`js/main.js`) → `update(dt)` → `render()` → `updGOFlames()`. `update()` scales `dt` by the speed multiplier `gS` and accumulates it into **`tt`**, the simulation clock that drives every timer, animation phase, and the 300-second day cycle (`dayCount = floor(tt/300)+1`). Pausing sets `gS = 0`, so paused time genuinely does not advance. `render()` is stateless and reads globals directly. `dt` is clamped to 0.1s per frame.
+`loop()` (`js/main.js`) → `update(dt)` → `render()` → `updGOFlames()`, then the idle-prompt tick. `update()` scales `dt` by the speed multiplier `gS` and accumulates it into **`tt`**, the simulation clock that drives every timer, animation phase, and the 300-second day cycle (`dayCount = floor(tt/300)+1`). `render()` is stateless and reads globals directly. `dt` is clamped to 0.1s per frame.
+
+**Speed goes through `setSpeed(mult)` (`js/game.js`), never through `gS` directly.** `gS = spdMult * BASE_SPEED`, where `spdMult` is the ×1/×2/×5/×10 the player picked and `BASE_SPEED` (1.25) is the house tempo — so the labelled ×1 is already a touch quicker than real time. `setSpeed` also calls `syncSpeedUI()`, which marks every `[data-speed]` control at once; that is why the settings row, the debug row and the keyboard can never disagree. The only code that writes `gS` itself is `togglePause()` (parks it at 0, restoring `prevSpeed`) and `triggerGameOver()`.
+
+### Canvas density
+
+The backing store is sized to `devicePixelRatio` (capped at 2) in `resize()`, and `render()` installs `setTransform(DPR,0,0,DPR,0,0)` as its base transform. **Everything the game draws is therefore in CSS pixels** — use `VW`/`VH` for viewport size, never `C.width`/`C.height`, which are device pixels. Screen-space HUD blocks re-assert the same `setTransform(DPR,…)` rather than the identity. The clock widget re-sizes its own backing store the same way when `DPR` changes (dragging the window to another display).
 
 ### The two-layer world model — the key invariant
 
@@ -100,6 +107,7 @@ The UI chrome (banner, task bubble, gallery modal, settings, debug panel, game-o
 
 - **`setFont(...)`, never `X.font = ...`.** Assigning `font` re-parses the shorthand, and the draw loops flip sizes hundreds of times a frame, so `setFont` (`js/state.js`) skips no-op writes. Its shadow copy goes stale whenever the real context state is rolled back, so **every `X.restore()` must be followed by `resetFontState()`**, and `resize()` calls it too (setting `canvas.width` wipes context state). Use `fontPx(n)` for a computed size rather than building the string inline.
 - **Grass is baked.** `gCh`/`gCI`/`GRASS_COLS` (`js/state.js`) precompute each tile's glyph and a quantised shade from `gV`/`gD` at load. The terrain pass queues tiles into `gBuf` per colour bucket and flushes one run each. If you ever make grass dynamic, that bake has to move or go.
+- **Motion is opt-out.** The stylesheet has a `prefers-reduced-motion` block, and `updFlicker()` (`js/game.js`) checks the same query in JS because the CRT flicker is drawn into the canvas where CSS cannot reach it. New ambient animation needs both.
 - **`EL` caches every node touched per frame.** Add new per-frame DOM nodes to its id list instead of calling `getElementById` in a loop. One-shot paths (game over, restart) still use `getElementById` and that is fine.
 - **Ask the set about the plants, not the plants about the set.** `burnPlants()` (`js/fire.js`) sweeps the plant arrays once and does a `fireTiles.has()` per plant. Do not invert it back into a loop over `fireTiles` that scans arrays — that was O(tiles × plants) per frame.
 - **Throttled writes.** The day label, the clock canvas, the log badge (`js/game.js`) and the burned-ground countdown (`burnedDecayT`, `js/fire.js`) only run when their value actually changes. `updTasks()` rebuilds the log's DOM only when a task flips — never unconditionally.
@@ -131,5 +139,7 @@ Four places must be updated whenever you add state or content:
 - **`handleTap(sx, sy)`** (`js/input.js`) is the single input entry point, and its ordering is the interaction priority: held-selection branches (`sel.type`) first, then water pickup/apply, then altar seed, then reed, then entities by proximity (`HR = T*0.8`), then grid tap-to-name. Insert new interactions at the right precedence. It is called from both `mousedown` (left button) and `touchend`; `touchConsumed` suppresses the synthetic mouse event that follows a tap. Middle-drag and one-finger drag pan; wheel and pinch zoom (`cam.z` clamped 0.5–6).
 - **`index.html`'s script list** — a new `js/*.js` file is invisible until it has a `<script>` tag, in the right order (see the load-order note above).
 - **`runDbg()`** (`js/debug.js`) — new progression content should get a debug button, otherwise it takes minutes of real play to reach. Add the button in `renderDbg()` and the branch in `runDbg()`; branches are written as `if(cmd==='x'||cmd==='all')` so `UNLOCK ALL` picks them up in order.
+
+Audio defaults live in `js/state.js` (`volMusic = 0.25`, `volSFX = 0.5`) and the sliders read their starting position from those globals in `bindVol()` (`js/ui.js`) — do not hard-code a `value` in the markup, or the two will drift.
 
 Audio can only start from a user gesture: `initAudio()` is called on the first tap and `playS()` no-ops until then. `playS` clones the `Audio` node per play, so overlapping sounds are fine. `Sounds/firesound.wav` is 8 MB — avoid adding more large binaries.

@@ -18,19 +18,19 @@
 <div id="task-bubble">Task completed!</div>
 <div id="day-counter">DAY 1</div>
 <div id="day-clock"><canvas id="clock-canvas" width="52" height="56"></canvas></div>
-<div id="pause-btn">||</div>
-<div id="gallery-btn" title="[LOG]"><span class="btn-glyph">▣</span><span class="btn-label">LOG</span><div id="gallery-badge"></div></div>
-<div id="settings-btn" title="[Settings]"><span class="btn-glyph">⚙</span><span class="btn-label">SET</span><div id="settings-badge"></div></div>
+<div id="pause-btn" role="button" tabindex="0" aria-label="Pause">||</div>
+<div id="gallery-btn" role="button" tabindex="0" aria-label="Open log" title="[LOG]"><span class="btn-glyph">▣</span><span class="btn-label">LOG</span><div id="gallery-badge"></div></div>
+<div id="settings-btn" role="button" tabindex="0" aria-label="Settings" title="[Settings]"><span class="btn-glyph">⚙</span><span class="btn-label">SET</span><div id="settings-badge"></div></div>
 <div id="hint-strip"><span id="hint-text"></span></div>
 <div id="settings-panel">
 <div class="stg-title">┌─ SETTINGS ─┐</div>
-<label>Music</label>
-<input type="range" id="vol-music" min="0" max="100" value="50">
-<label>SFX</label>
-<input type="range" id="vol-sfx" min="0" max="100" value="50">
-<div id="stg-speed" style="display:none;margin-top:6px;border-top:1px solid #0a3a0a;padding-top:8px;">
+<label for="vol-music">Music<span class="stg-val" id="vol-music-val">25</span></label>
+<input type="range" id="vol-music" min="0" max="100" value="25" aria-label="Music volume">
+<label for="vol-sfx">SFX<span class="stg-val" id="vol-sfx-val">50</span></label>
+<input type="range" id="vol-sfx" min="0" max="100" value="50" aria-label="Sound effects volume">
+<div id="stg-speed">
 <label>Speed</label>
-<div style="display:flex;gap:4px;margin-top:4px;">
+<div class="stg-speed-row">
 <button class="speed-btn stg-spd active" data-speed="1">x1</button>
 <button class="speed-btn stg-spd" data-speed="2">x2</button>
 <button class="speed-btn stg-spd" data-speed="5">x5</button>
@@ -38,27 +38,26 @@
 </div>
 </div>
 </div>
-<div id="debug-btn" title="[DEBUG]">&gt;_</div>
+<div id="debug-btn" role="button" tabindex="0" aria-label="Debug console" title="[DEBUG]">&gt;_</div>
 <div id="debug-panel"></div>
-<div id="speed-control"></div>
 </div>
 <div id="border-flash"></div>
 <div id="gameover-overlay">
 <div class="go-flames" id="go-flames-top"></div>
 <div class="go-text">The flames have consumed the forest...</div>
 <div class="go-days">DAY 0</div>
-<div class="go-btn" id="go-restart">AWAKEN</div>
+<div class="go-btn" id="go-restart" role="button" tabindex="0">AWAKEN</div>
 <div class="go-flames" id="go-flames-bot" style="margin-top:20px;"></div>
 </div>
 <div id="gallery-modal">
 <div id="gallery-backdrop"></div>
 <div id="gallery-book">
-<span id="gallery-close">[X]</span>
+<span id="gallery-close" role="button" tabindex="0" aria-label="Close">[X]</span>
 <div id="gallery-header">┌──── SPIRIT_GROVE.LOG ────┐</div>
 <div id="gallery-tabs">
-<div class="gallery-tab active" data-page="tasks">[TASKS]</div>
-<div class="gallery-tab" data-page="plants">[FLORA]</div>
-<div class="gallery-tab" data-page="animals">[FAUNA]</div>
+<div class="gallery-tab active" role="button" tabindex="0" data-page="tasks">[TASKS]</div>
+<div class="gallery-tab" role="button" tabindex="0" data-page="plants">[FLORA]</div>
+<div class="gallery-tab" role="button" tabindex="0" data-page="animals">[FAUNA]</div>
 </div>
 <div id="gallery-content"></div>
 </div>
